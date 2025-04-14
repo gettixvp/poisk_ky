@@ -16,9 +16,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def parse_kufar(city="minsk", min_price=100, max_price=300):
-    # Updated URL to avoid 404
-    base_url = "https://www.kufar.by/listings/r~{city}/apartments-for-rent"
-    url = base_url.format(city=city.lower()) + f"?currency=USD&price-from={min_price}&price-to={max_price}&sort=last"
+    # Primary URL
+    base_url = "https://www.kufar.by/l/r~{city}/kvartiry/snyat"
+    url = base_url.format(city=city.lower()) + f"?cur=USD&prc=r%3A{min_price}%2C{max_price}&sort=lst.d"
+    # Fallback URL if primary fails
+    fallback_url = f"https://www.kufar.by/listings/r~{city}/apartments-for-rent?currency=USD&price-from={min_price}&price-to={max_price}&sort=last"
+    
     headers = {
         "User-Agent": random.choice([
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
@@ -35,92 +38,97 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
     retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    try:
-        time.sleep(random.uniform(1, 3))
-        response = session.get(url, headers=headers, timeout=10)
-        logger.info(f"Fetching {url}: HTTP {response.status_code}")
-        response.raise_for_status()
+    for attempt_url in [url, fallback_url]:
+        try:
+            time.sleep(random.uniform(1, 3))
+            response = session.get(attempt_url, headers=headers, timeout=10)
+            logger.info(f"Fetching {attempt_url}: HTTP {response.status_code}")
+            response.raise_for_status()
 
-        soup = BeautifulSoup(response.text, 'html.parser')
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-        if "ничего не найдено" in response.text.lower():
-            logger.warning(f"No listings found at {url}")
-            return []
-
-        listings = soup.find_all('div', class_='styles_wrapper__Q06m9')
-        if not listings:
-            logger.error(f"No listing elements found for {url}")
-            with open("kufar_error.html", "w", encoding="utf-8") as f:
-                f.write(response.text)
-            logger.info("Saved raw HTML to kufar_error.html")
-            return []
-
-        parsed_data = []
-        logger.info(f"Found {len(listings)} listings at {url}")
-
-        for listing in listings:
-            try:
-                # Listing URL
-                link_elem = listing.find('a', href=True)
-                listing_url = link_elem['href'] if link_elem else None
-                if listing_url and not listing_url.startswith('http'):
-                    listing_url = f"https://www.kufar.by{listing_url}"
-
-                # Price
-                price_elem = listing.find('div', class_='styles_price__usd__HpXMa')
-                price_text = price_elem.text.strip() if price_elem else ""
-                price_match = re.search(r'\d+', price_text.replace('$', '').replace(' ', ''))
-                price = int(price_match.group()) if price_match else None
-
-                # Parameters
-                params_elem = listing.find('div', class_='styles_parameters__7zKlL')
-                rooms, area, floor_info = None, None, None
-                if params_elem:
-                    params_text = params_elem.text
-                    rooms_match = re.search(r'(\d+)\s*комн\.|студия', params_text, re.I)
-                    area_match = re.search(r'(\d+)\s*м²', params_text)
-                    floor_match = re.search(r'этаж\s*(\d+)\s*из\s*(\d+)', params_text)
-                    rooms = int(rooms_match.group(1)) if rooms_match and rooms_match.group(1) else "studio" if rooms_match else None
-                    area = int(area_match.group(1)) if area_match else None
-                    floor_info = floor_match.group(0) if floor_match else None
-
-                # Description
-                desc_elem = listing.find('div', class_=re.compile(r'styles_body__5BrnC.*styles_body__r33c8'))
-                description = desc_elem.text.strip() if desc_elem else None
-
-                # Address
-                address_elem = listing.find('div', class_='styles_address__l6Qe_')
-                address = address_elem.text.strip() if address_elem else None
-
-                # Image
-                image_elem = listing.find('img', class_='styles_image__4Wy4_')
-                image = image_elem['src'] if image_elem and 'src' in image_elem.attrs else "https://via.placeholder.com/150"
-
-                parsed_data.append({
-                    'price': price,
-                    'rooms': rooms,
-                    'area': area,
-                    'floor': floor_info,
-                    'description': description,
-                    'address': address,
-                    'image': image,
-                    'listing_url': listing_url
-                })
-                logger.debug(f"Parsed listing: price={price}, rooms={rooms}, area={area}, address={address}, url={listing_url}")
-
-            except Exception as e:
-                logger.error(f"Error parsing listing: {str(e)}")
+            if "ничего не найдено" in response.text.lower():
+                logger.warning(f"No listings found at {attempt_url}")
                 continue
 
-        return parsed_data
+            listings = soup.find_all('div', class_='styles_wrapper__Q06m9')
+            if not listings:
+                logger.error(f"No listing elements found for {attempt_url}")
+                with open("kufar_error.html", "w", encoding="utf-8") as f:
+                    f.write(response.text)
+                logger.info("Saved raw HTML to kufar_error.html")
+                continue
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to fetch {url}: {str(e)}")
-        if 'response' in locals():
-            with open("kufar_error.html", "w", encoding="utf-8") as f:
-                f.write(response.text)
-            logger.info("Saved raw HTML to kufar_error.html")
-        return []
-    except Exception as e:
-        logger.error(f"Unexpected error in parse_kufar: {str(e)}")
-        return []
+            parsed_data = []
+            logger.info(f"Found {len(listings)} listings at {attempt_url}")
+
+            for listing in listings:
+                try:
+                    # Listing URL
+                    link_elem = listing.find('a', href=True)
+                    listing_url = link_elem['href'] if link_elem else None
+                    if listing_url and not listing_url.startswith('http'):
+                        listing_url = f"https://www.kufar.by{listing_url}"
+
+                    # Price
+                    price_elem = listing.find('div', class_='styles_price__usd__HpXMa')
+                    price_text = price_elem.text.strip() if price_elem else ""
+                    price_match = re.search(r'\d+', price_text.replace('$', '').replace(' ', ''))
+                    price = int(price_match.group()) if price_match else None
+
+                    # Parameters
+                    params_elem = listing.find('div', class_='styles_parameters__7zKlL')
+                    rooms, area, floor_info = None, None, None
+                    if params_elem:
+                        params_text = params_elem.text
+                        rooms_match = re.search(r'(\d+)\s*комн\.|студия', params_text, re.I)
+                        area_match = re.search(r'(\d+)\s*м²', params_text)
+                        floor_match = re.search(r'этаж\s*(\d+)\s*из\s*(\d+)', params_text)
+                        rooms = int(rooms_match.group(1)) if rooms_match and rooms_match.group(1) else "studio" if rooms_match else None
+                        area = int(area_match.group(1)) if area_match else None
+                        floor_info = floor_match.group(0) if floor_match else None
+
+                    # Description
+                    desc_elem = listing.find('div', class_=re.compile(r'styles_body__5BrnC.*styles_body__r33c8'))
+                    description = desc_elem.text.strip() if desc_elem else None
+
+                    # Address
+                    address_elem = listing.find('div', class_='styles_address__l6Qe_')
+                    address = address_elem.text.strip() if address_elem else None
+
+                    # Image
+                    image_elem = listing.find('img', class_='styles_image__4Wy4_')
+                    image = image_elem['src'] if image_elem and 'src' in image_elem.attrs else "https://via.placeholder.com/150"
+
+                    parsed_data.append({
+                        'price': price,
+                        'rooms': rooms,
+                        'area': area,
+                        'floor': floor_info,
+                        'description': description,
+                        'address': address,
+                        'image': image,
+                        'listing_url': listing_url
+                    })
+                    logger.debug(f"Parsed listing: price={price}, rooms={rooms}, area={area}, address={address}, url={listing_url}")
+
+                except Exception as e:
+                    logger.error(f"Error parsing listing: {str(e)}")
+                    continue
+
+            if parsed_data:
+                return parsed_data
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to fetch {attempt_url}: {str(e)}")
+            if 'response' in locals():
+                with open("kufar_error.html", "w", encoding="utf-8") as f:
+                    f.write(response.text)
+                logger.info("Saved raw HTML to kufar_error.html")
+            continue
+        except Exception as e:
+            logger.error(f"Unexpected error in parse_kufar at {attempt_url}: {str(e)}")
+            continue
+
+    logger.error(f"All URL attempts failed for city {city}")
+    return []
