@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300, rooms: Optional[str] = None) -> List[Dict]:
     base_url = "https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno"
     # Если rooms указано, используем как есть (1k, 2k, studio)
-    rooms_part = f"/{rooms}" if rooms else ""
+    rooms_part = f"/{rooms}k" if rooms else ""
     url = (
         base_url.format(city=city.lower()) + 
         rooms_part + 
