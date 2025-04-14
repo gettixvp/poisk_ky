@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 from fastapi import FastAPI, HTTPException, Form, UploadFile, File, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -7,7 +8,8 @@ from pydantic import BaseModel
 import asyncpg
 from parse_kufar import parse_kufar
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, Dispatcher
+from telegram.ext import Application, CommandHandler
+from telegram.error import RetryAfter
 from dotenv import load_dotenv
 from typing import List, Optional
 import uuid
@@ -72,38 +74,56 @@ async def init_db():
         logger.error(f"Failed to initialize database: {str(e)}")
         raise
 
+# Retry logic for webhook
+async def set_webhook_with_retry(bot, webhook_url, max_attempts=5, initial_delay=1):
+    attempt = 0
+    delay = initial_delay
+    while attempt < max_attempts:
+        try:
+            await bot.set_webhook(webhook_url)
+            logger.info(f"Webhook set successfully to {webhook_url}")
+            return True
+        except RetryAfter as e:
+            logger.warning(f"Flood control: {str(e)}. Retrying in {delay} seconds...")
+            await asyncio.sleep(delay)
+            attempt += 1
+            delay *= 2  # Exponential backoff
+        except Exception as e:
+            logger.error(f"Failed to set webhook: {str(e)}")
+            raise
+    logger.error(f"Failed to set webhook after {max_attempts} attempts")
+    raise HTTPException(status_code=500, detail="Failed to set Telegram webhook")
+
 @app.on_event("startup")
 async def startup_event():
     await init_db()
     # Инициализация Telegram бота с webhook
     try:
-        updater = Updater(TELEGRAM_TOKEN, use_context=True)
-        dispatcher = updater.dispatcher
-        dispatcher.add_handler(CommandHandler("start", start_command))
-        updater.start_webhook(
-            listen="0.0.0.0",
-            port=8443,  # Render allows this port for webhooks
-            url_path="/telegram_webhook",
-            webhook_url=f"{RENDER_URL}/telegram_webhook"
-        )
-        updater.bot.set_webhook(f"{RENDER_URL}/telegram_webhook")
-        app.state.updater = updater
-        logger.info(f"Telegram webhook set to {RENDER_URL}/telegram_webhook")
+        bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
+        bot_app.add_handler(CommandHandler("start", start_command))
+        await bot_app.initialize()
+        # Set webhook with retry
+        webhook_url = f"{RENDER_URL}/telegram_webhook"
+        await set_webhook_with_retry(bot_app.bot, webhook_url)
+        await bot_app.start()
+        app.state.bot_app = bot_app
+        logger.info(f"Telegram bot initialized")
     except Exception as e:
         logger.error(f"Failed to initialize Telegram bot: {str(e)}")
         raise
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    if hasattr(app.state, "updater"):
+    if hasattr(app.state, "bot_app"):
         try:
-            app.state.updater.stop()
+            await app.state.bot_app.stop()
+            await app.state.bot_app.shutdown()
             logger.info("Telegram bot stopped")
         except Exception as e:
             logger.error(f"Error stopping Telegram bot: {str(e)}")
 
 # Telegram /start команда
-def start_command(update, context):
+async def start_command(update: Update, context):
     try:
         welcome_message = (
             "🏠 Добро пожаловать в бот поиска квартир!\n\n"
@@ -112,7 +132,7 @@ def start_command(update, context):
             "👉 Нажмите кнопку ниже, чтобы начать:"
         )
         keyboard = [[{"text": "Открыть приложение", "web_app": {"url": RENDER_URL}}]]
-        update.message.reply_text(welcome_message, reply_markup={"inline_keyboard": keyboard})
+        await update.message.reply_text(welcome_message, reply_markup={"inline_keyboard": keyboard})
         logger.info(f"Sent /start response to user {update.effective_user.id}")
     except Exception as e:
         logger.error(f"Error in start_command: {str(e)}")
@@ -122,9 +142,9 @@ def start_command(update, context):
 async def telegram_webhook(request: Request):
     try:
         update = await request.json()
-        update_obj = Update.de_json(update, app.state.updater.bot)
+        update_obj = Update.de_json(update, app.state.bot_app.bot)
         if update_obj:
-            app.state.updater.dispatcher.process_update(update_obj)
+            await app.state.bot_app.process_update(update_obj)
             logger.debug(f"Processed Telegram update: {update_obj.update_id}")
         return {"status": "ok"}
     except Exception as e:
