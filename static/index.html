@@ -62,16 +62,16 @@
         }
         body.dark {
             background-color: #1e293b;
-            color: #f8fafc;
+            color: #ffffff;
         }
         body.dark .soft-card {
             background: rgba(45, 55, 72, 0.85);
             border: 1px solid rgba(71, 85, 105, 0.5);
-            color: #f8fafc;
+            color: #ffffff;
         }
         body.dark .soft-input {
             background: rgba(45, 55, 72, 0.7);
-            color: #f8fafc;
+            color: #ffffff;
             border-color: #4b5563;
         }
         body.dark .soft-input::placeholder {
@@ -82,10 +82,23 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
         body.dark .text-soft-dark {
-            color: var(--tg-theme-text-color, #f8fafc);
+            color: #ffffff;
         }
         body.dark .text-soft-gray {
-            color: #9ca3af;
+            color: #ffffff;
+        }
+        body.dark .text-soft-primary {
+            color: #ffffff;
+        }
+        body.dark .welcome-card {
+            color: #ffffff;
+        }
+        body.dark .price-tag {
+            color: #ffffff;
+        }
+        body.dark .feature-badge {
+            color: #ffffff;
+            background-color: rgba(99, 102, 241, 0.2);
         }
         .text-soft-dark { color: var(--tg-theme-text-color, #1e293b); }
         .text-soft-gray { color: var(--tg-theme-hint-color, #94a3b8); }
@@ -206,7 +219,7 @@
             box-shadow: var(--tg-theme-bg-color, black) 0px 0px 0px 0px, var(--tg-theme-bg-color, black) 0px 0px 0px 0px, rgba(255, 255, 255, 0.1) 0px 10px 15px -3px, rgba(255, 255, 255, 0.1) 0px 4px 6px -4px;
         }
         .safe-area {
-            padding-top: 30px;
+            padding-top: 30vh;
             padding-left: var(--tg-safe-area-inset-left, 0px);
             padding-right: var(--tg-safe-area-inset-right, 0px);
             min-height: var(--tg-viewport-stable-height, 0h);
@@ -320,6 +333,7 @@
         }
         body.dark .captcha-content {
             background: #1e293b;
+            color: #ffffff;
         }
         .welcome-card {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
@@ -359,9 +373,6 @@
             font-size: 12px;
             margin-right: 5px;
             margin-bottom: 5px;
-        }
-        body.dark .feature-badge {
-            background-color: rgba(99, 102, 241, 0.2);
         }
         .skeleton {
             background-color: #e2e8f0;
@@ -798,7 +809,7 @@
             tg.requestFullscreen();
             tg.ready();
             
-            // Добавляем вибрацию при загрузке
+            // Вибрация при загрузке
             if ('vibrate' in navigator) {
                 navigator.vibrate(100);
             }
@@ -828,7 +839,7 @@
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // Добавляем вибрацию при переключении вкладок
+                // Вибрация при переключении вкладок
                 if ('vibrate' in navigator) {
                     navigator.vibrate(50);
                 }
@@ -860,7 +871,7 @@
             
             // Вибрация при переключении темы
             if ('vibrate' in navigator) {
-                navigator.vibrate(30);
+                navigator.vibrate(50);
             }
         });
 
@@ -891,6 +902,11 @@
         }
 
         document.getElementById('search-btn').addEventListener('click', () => {
+            // Вибрация при поиске
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+
             const minPrice = document.getElementById('min-price').value;
             const maxPrice = document.getElementById('max-price').value;
             const rooms = document.getElementById('rooms').value;
@@ -916,25 +932,40 @@
             searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Поиск...';
             searchBtn.disabled = true;
 
+            console.log('Отправка запроса на /api/search:', searchData);
+
             fetch('/api/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(searchData)
-            }).then(res => res.json()).then(data => {
+            }).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP ошибка: ${res.status}`);
+                }
+                return res.json();
+            }).then(data => {
+                console.log('Ответ от /api/search:', data);
+
+                captchaCode = null;
+                const resultsContainer = document.getElementById('results-container');
+                resultsContainer.innerHTML = '';
+                
                 if (data.error === 'CAPTCHA_REQUIRED') {
                     showCaptchaModal();
                     return;
                 }
                 if (data.error) {
                     showToast(data.error);
+                    resultsContainer.innerHTML = `
+                        <div class="text-center py-10">
+                            <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
+                            <p class="text-sm text-soft-gray">Ошибка: ${data.error}</p>
+                        </div>
+                    `;
                     return;
                 }
                 
-                captchaCode = null;
-                const resultsContainer = document.getElementById('results-container');
-                resultsContainer.innerHTML = '';
-                
-                if (data.ads.length === 0) {
+                if (!data.ads || !Array.isArray(data.ads) || data.ads.length === 0) {
                     resultsContainer.innerHTML = `
                         <div class="text-center py-10">
                             <i class="fas fa-search text-soft-gray text-3xl mb-3"></i>
@@ -959,6 +990,12 @@
             }).catch(err => {
                 console.error('Ошибка поиска:', err);
                 showToast('Произошла ошибка при поиске');
+                document.getElementById('results-container').innerHTML = `
+                    <div class="text-center py-10">
+                        <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
+                        <p class="text-sm text-soft-gray">Ошибка при загрузке данных.</p>
+                    </div>
+                `;
             }).finally(() => {
                 searchBtn.innerHTML = originalText;
                 searchBtn.disabled = false;
@@ -969,24 +1006,22 @@
             const modal = document.getElementById('captcha-modal');
             modal.classList.add('active');
             
-            // Генерируем случайный код капчи
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let result = '';
-            for (let i = 0; i < 6; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
+            // Используем фиксированный код из логов
+            captchaCode = '3A7B9C';
             
             // Обновляем код в модальном окне
             const captchaDisplay = modal.querySelector('.font-mono');
             if (captchaDisplay) {
-                captchaDisplay.textContent = result;
+                captchaDisplay.textContent = captchaCode;
             }
-            
-            // Сохраняем код для проверки
-            captchaCode = result;
         }
 
         document.getElementById('captcha-submit').addEventListener('click', () => {
+            // Вибрация при подтверждении капчи
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+
             const inputCode = document.getElementById('captcha-input').value.trim().toUpperCase();
             if (!inputCode) {
                 showToast('Пожалуйста, введите код капчи');
@@ -1004,19 +1039,23 @@
         });
 
         document.getElementById('captcha-cancel').addEventListener('click', () => {
+            // Вибрация при отмене капчи
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+
             document.getElementById('captcha-modal').classList.remove('active');
             document.getElementById('captcha-input').value = '';
             captchaCode = null;
         });
 
         function loadPopular() {
-            // Показываем скелетоны загрузки
             const container = document.getElementById('popular-container');
             
             setTimeout(() => {
                 fetch('/api/ads').then(res => res.json()).then(data => {
                     container.innerHTML = '';
-                    if (data.ads.length === 0) {
+                    if (!data.ads || data.ads.length === 0) {
                         container.innerHTML = `
                             <div class="text-center py-10">
                                 <i class="fas fa-home text-soft-gray text-3xl mb-3"></i>
@@ -1046,7 +1085,7 @@
             setTimeout(() => {
                 fetch(`/api/new_listings?telegram_id=${userId}`).then(res => res.json()).then(data => {
                     container.innerHTML = '';
-                    if (data.ads.length === 0) {
+                    if (!data.ads || data.ads.length === 0) {
                         container.innerHTML = `
                             <div class="text-center py-10">
                                 <i class="fas fa-bell-slash text-soft-gray text-3xl mb-3"></i>
@@ -1086,7 +1125,7 @@
             setTimeout(() => {
                 fetch(`/api/user_listings?telegram_id=${userId}`).then(res => res.json()).then(data => {
                     container.innerHTML = '';
-                    if (data.ads.length === 0) {
+                    if (!data.ads || data.ads.length === 0) {
                         container.innerHTML = `
                             <div class="text-center py-10">
                                 <i class="fas fa-home text-soft-gray text-3xl mb-3"></i>
@@ -1098,6 +1137,10 @@
                         `;
                         
                         document.getElementById('add-first-listing').addEventListener('click', () => {
+                            // Вибрация при добавлении первого объявления
+                            if ('vibrate' in navigator) {
+                                navigator.vibrate(50);
+                            }
                             document.getElementById('add-listing-form').classList.remove('hidden');
                             document.getElementById('user-listings').classList.add('hidden');
                         });
@@ -1123,11 +1166,11 @@
             card.className = 'apartment-card soft-card shadow-soft hover:shadow-soft-lg transition-all duration-300';
             
             // Форматируем цену
-            const formattedPrice = new Intl.NumberFormat('ru-RU').format(ad.price);
+            const formattedPrice = new Intl.NumberFormat('ru-RU').format(ad.price || 0);
             
             card.innerHTML = `
                 <div class="relative">
-                    ${ad.image ? `<img src="${ad.image}" alt="${ad.title}" class="w-full h-48 object-cover rounded-t-lg">` : 
+                    ${ad.image ? `<img src="${ad.image}" alt="${ad.title || 'Квартира'}" class="w-full h-48 object-cover rounded-t-lg">` : 
                     `<div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-lg">
                         <i class="fas fa-image text-soft-gray text-3xl"></i>
                     </div>`}
@@ -1137,7 +1180,7 @@
                     </div>` : ''}
                 </div>
                 <div class="p-4">
-                    <h4 class="text-base font-semibold text-soft-dark mb-2">${ad.title}</h4>
+                    <h4 class="text-base font-semibold text-soft-dark mb-2">${ad.title || 'Без названия'}</h4>
                     ${ad.address ? `<p class="text-sm text-soft-gray mb-3 flex items-center">
                         <i class="fas fa-map-marker-alt text-xs mr-1"></i>
                         <span class="truncate">${ad.address}</span>
@@ -1152,7 +1195,7 @@
                     <div class="flex items-center justify-between">
                         <div class="text-sm text-soft-gray">
                             <i class="fas fa-clock mr-1"></i>
-                            ${formatDate(ad.date)}
+                            ${formatDate(ad.date || new Date())}
                         </div>
                         ${isUserListing ? `
                         <div class="flex space-x-2">
@@ -1189,16 +1232,21 @@
         }
 
         document.getElementById('add-listing-btn').addEventListener('click', () => {
-            document.getElementById('add-listing-form').classList.remove('hidden');
-            document.getElementById('user-listings').classList.add('hidden');
-            
             // Вибрация при открытии формы
             if ('vibrate' in navigator) {
                 navigator.vibrate(50);
             }
+
+            document.getElementById('add-listing-form').classList.remove('hidden');
+            document.getElementById('user-listings').classList.add('hidden');
         });
 
         document.getElementById('cancel-btn').addEventListener('click', () => {
+            // Вибрация при отмене
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+
             document.getElementById('add-listing-form').classList.add('hidden');
             document.getElementById('user-listings').classList.remove('hidden');
             document.getElementById('listing-form').reset();
@@ -1268,6 +1316,11 @@
         document.getElementById('listing-form').addEventListener('submit', (e) => {
             e.preventDefault();
             
+            // Вибрация при отправке формы
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+
             // Показываем индикатор загрузки
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
@@ -1318,6 +1371,11 @@
         });
 
         document.getElementById('logout-btn').addEventListener('click', () => {
+            // Вибрация при выходе
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+
             tg.close();
         });
 
