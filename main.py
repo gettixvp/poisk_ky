@@ -86,6 +86,9 @@ async def init_db():
                 END IF;
             END $$;
 
+            -- Drop old listings table if it exists
+            DROP TABLE IF EXISTS listings CASCADE;
+
             -- Ensure users table schema
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY,
@@ -317,7 +320,7 @@ async def get_popular_ads():
             "city": row['city'],
             "address": row['address'],
             "image": row['image'],
-            "listing_url": row['listing_url'],
+            "listing_url": row.get('listing_url', ''),
             "date": row['created_at'].isoformat(),
             "source": row['source']
         } for row in rows]
@@ -348,7 +351,7 @@ async def get_new_listings(telegram_id: int):
             "city": row['city'],
             "address": row['address'],
             "image": row['image'],
-            "listing_url": row['listing_url'],
+            "listing_url": row.get('listing_url', ''),
             "date": row['created_at'].isoformat(),
             "source": row['source']
         } for row in rows]
@@ -365,8 +368,7 @@ async def get_user_listings(telegram_id: int):
     try:
         conn = await asyncpg.connect(DATABASE_URL)
         listings = await conn.fetch(
-            "SELECT * FROM listings WHERE telegram_id = $1 AND source = 'user'",
-            telegram_id
+            "SELECT * FROM listings WHERE telegram_id = $1 AND source = 'user'"
         )
         user = await conn.fetchrow(
             "SELECT telegram_id, username, first_name FROM users WHERE telegram_id = $1",
@@ -384,7 +386,7 @@ async def get_user_listings(telegram_id: int):
             "city": row['city'],
             "address": row['address'],
             "image": row['image'],
-            "listing_url": row['listing_url'],
+            "listing_url": row.get('listing_url', ''),
             "date": row['created_at'].isoformat(),
             "source": row['source']
         } for row in listings]
