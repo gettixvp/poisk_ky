@@ -65,7 +65,7 @@ async def init_db():
 @app.on_event("startup")
 async def startup_event():
     await init_db()
-    # Инициализация Telegram бота с polling
+    # Инициализация Telegram бота
     bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
     bot_app.add_handler(CommandHandler("start", start_command))
     await bot_app.initialize()
@@ -97,7 +97,7 @@ async def register_user(telegram_id: int):
 # Поиск объявлений
 @app.post("/api/search")
 async def search(request: SearchRequest):
-    if request.captcha_code and request.captcha_code != "3A7B9C":  # Имитация капчи
+    if request.captcha_code and request.captcha_code != "3A7B9C":
         raise HTTPException(status_code=400, detail="CAPTCHA_REQUIRED")
     
     listings = parse_kufar(city=request.city, min_price=request.min_price, max_price=request.max_price)
@@ -108,6 +108,19 @@ async def search(request: SearchRequest):
            (request.rooms == "studio" and "студия" in (listing['description'] or "").lower())
     ]
     
+    # Заглушка для теста, если парсинг не дал результатов
+    if not filtered_listings:
+        filtered_listings = [{
+            'price': 200,
+            'rooms': 2,
+            'area': 50,
+            'floor': 'этаж 5 из 9',
+            'description': 'Тестовая квартира для отладки',
+            'address': 'ул. Тестовая 123, Минск',
+            'image': 'https://via.placeholder.com/150'
+        }]
+        logging.warning(f"Парсинг Kufar не вернул результатов для города {request.city}. Возвращена заглушка.")
+
     # Сохранение в базу
     conn = await asyncpg.connect(DATABASE_URL)
     for listing in filtered_listings:
@@ -246,3 +259,14 @@ async def head_root():
 @app.get("/favicon.ico")
 async def favicon():
     return Response(status_code=204)
+
+# Логи для отладки
+@app.get("/api/logs")
+async def get_logs():
+    try:
+        with open("kufar_parser.log", "r") as f:
+            # Читаем последние 50 строк
+            lines = f.readlines()[-50:]
+        return {"logs": "".join(lines)}
+    except Exception as e:
+        return {"logs": f"Ошибка чтения логов: {str(e)}"}
