@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300, rooms: Optional[str] = None) -> List[Dict]:
     base_url = "https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno"
+    # Если rooms указано, используем как есть (1k, 2k, studio)
     rooms_part = f"/{rooms}" if rooms else ""
     url = (
         base_url.format(city=city.lower()) + 
@@ -84,13 +85,13 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
 
                 # Rooms and Parameters
                 params_element = ad.select_one(".styles_parameters__7zKlL")
-                rooms, area, floor_info = None, None, None
+                rooms_val, area, floor_info = None, None, None
                 if params_element:
                     params_text = params_element.text
                     rooms_match = re.search(r"(\d+)\s*комн\.|студия", params_text, re.I)
                     area_match = re.search(r"(\d+)\s*м²", params_text)
                     floor_match = re.search(r"этаж\s*(\d+)\s*из\s*(\d+)", params_text)
-                    rooms = int(rooms_match.group(1)) if rooms_match and rooms_match.group(1) else "studio" if rooms_match else None
+                    rooms_val = int(rooms_match.group(1)) if rooms_match and rooms_match.group(1) else "studio" if rooms_match else None
                     area = int(area_match.group(1)) if area_match else None
                     floor_info = floor_match.group(0) if floor_match else None
 
@@ -108,7 +109,7 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
 
                 parsed_data.append({
                     'price': price,
-                    'rooms': rooms,
+                    'rooms': rooms_val,
                     'area': area,
                     'floor': floor_info,
                     'description': description,
@@ -116,7 +117,7 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
                     'image': image,
                     'listing_url': listing_url
                 })
-                logger.debug(f"Parsed listing: price={price}, rooms={rooms}, area={area}, address={address}, url={listing_url}")
+                logger.debug(f"Parsed listing: price={price}, rooms={rooms_val}, area={area}, address={address}, url={listing_url}")
 
             except Exception as e:
                 logger.error(f"Error parsing listing: {str(e)}")
