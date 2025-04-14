@@ -52,12 +52,25 @@ class UserProfile(BaseModel):
 async def init_db():
     try:
         conn = await asyncpg.connect(DATABASE_URL)
+        # Drop anon_id if it exists, ensure correct schema
         await conn.execute('''
+            DO $$ 
+            BEGIN 
+                IF EXISTS (
+                    SELECT 1 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'users' AND column_name = 'anon_id'
+                ) THEN
+                    ALTER TABLE users DROP COLUMN anon_id;
+                END IF;
+            END $$;
+
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY,
                 username TEXT,
                 first_name TEXT
             );
+
             CREATE TABLE IF NOT EXISTS listings (
                 id UUID PRIMARY KEY,
                 telegram_id BIGINT,
@@ -376,7 +389,7 @@ async def add_listing(
     area: Optional[int] = Form(None),
     city: str = Form(...),
     address: Optional[str] = Form(None),
-    photos: List[UploadFile] = File(None)
+    photos: List[UploadFile] = File(default=None)
 ):
     try:
         image_url = None
