@@ -404,7 +404,7 @@ async def get_user_listings(telegram_id: int):
 # Добавление объявления
 @app.post("/api/add_listing")
 async def add_listing(
-    telegram	name_id: int = Form(...),
+    telegram_id: int = Form(...),
     title: str = Form(...),
     description: Optional[str] = Form(None),
     price: int = Form(...),
