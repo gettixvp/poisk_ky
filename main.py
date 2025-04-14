@@ -86,8 +86,10 @@ async def init_db():
                 END IF;
             END $$;
 
-            -- Drop old listings table if it exists
+            -- Drop old tables
             DROP TABLE IF EXISTS listings CASCADE;
+            DROP TABLE IF EXISTS ads CASCADE;
+            DROP TABLE IF EXISTS pending_listings CASCADE;
 
             -- Ensure users table schema
             CREATE TABLE IF NOT EXISTS users (
@@ -108,10 +110,13 @@ async def init_db():
                 city TEXT,
                 address TEXT,
                 image TEXT,
-                listing_url TEXT,
+                listing_url TEXT UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 source TEXT DEFAULT 'user'
             );
+
+            -- Index for faster duplicate checks
+            CREATE INDEX IF NOT EXISTS idx_listings_url ON listings (listing_url);
         ''')
         logger.info("Database initialized successfully")
         await conn.close()
@@ -259,6 +264,7 @@ async def search(request: SearchRequest):
         listings = parse_kufar(city=request.city, min_price=request.min_price, max_price=request.max_price)
         logger.info(f"Parsed {len(listings)} listings for city {request.city}")
         
+        # Фильтрация по комнатам
         filtered_listings = [
             listing for listing in listings
             if not request.rooms or str(listing['rooms']) == request.rooms or 
@@ -266,36 +272,34 @@ async def search(request: SearchRequest):
                (request.rooms == "studio" and "студия" in (listing['description'] or "").lower())
         ]
         
-        if not filtered_listings:
-            filtered_listings = [{
-                'price': 200,
-                'rooms': 2,
-                'area': 50,
-                'floor': 'этаж 5 из 9',
-                'description': 'Тестовая квартира для отладки',
-                'address': 'ул. Тестовая 123, Минск',
-                'image': 'https://via.placeholder.com/150',
-                'listing_url': 'https://example.com/test'
-            }]
-            logger.warning(f"No results from Kufar for {request.city}. Using stub data.")
-
+        # Проверка дубликатов в базе
         conn = await asyncpg.connect(DATABASE_URL)
-        for listing in filtered_listings:
-            listing_id = uuid.uuid4()
-            title = f"Квартира в {request.city} - {listing['rooms'] or 'не указан'} комн."
-            await conn.execute(
-                '''
-                INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, listing_url, source)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                ON CONFLICT DO NOTHING
-                ''',
-                listing_id, request.telegram_id, title, listing['description'],
-                listing['price'], str(listing['rooms']), listing['area'], request.city,
-                listing['address'], listing['image'], listing.get('listing_url'), 'kufar'
-            )
+        existing_urls = set(
+            row['listing_url'] for row in await conn.fetch("SELECT listing_url FROM listings WHERE listing_url IS NOT NULL")
+        )
+        
+        new_listings = []
+        for listing in filtered_listings[:10]:  # Берем до 10 объявлений
+            if listing.get('listing_url') and listing['listing_url'] not in existing_urls:
+                new_listings.append(listing)
+                listing_id = uuid.uuid4()
+                title = f"Квартира в {request.city} - {listing['rooms'] or 'не указан'} комн."
+                await conn.execute(
+                    '''
+                    INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, listing_url, source)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    ON CONFLICT (listing_url) DO NOTHING
+                    ''',
+                    listing_id, request.telegram_id, title, listing['description'],
+                    listing['price'], str(listing['rooms']), listing['area'], request.city,
+                    listing['address'], listing['image'], listing.get('listing_url'), 'kufar'
+                )
+                existing_urls.add(listing['listing_url'])
+        
         await conn.close()
         
-        return {"ads": filtered_listings}
+        # Возвращаем до 10 объявлений (новые или существующие)
+        return {"ads": filtered_listings[:10] if filtered_listings else []}
     except HTTPException:
         raise
     except Exception as e:
