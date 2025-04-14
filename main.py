@@ -43,6 +43,11 @@ class SearchRequest(BaseModel):
     rooms: Optional[str] = None
     captcha_code: Optional[str] = None
 
+class UserProfile(BaseModel):
+    telegram_id: int
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+
 # Инициализация базы данных
 async def init_db():
     try:
@@ -87,7 +92,7 @@ async def set_webhook_with_retry(bot, webhook_url, max_attempts=5, initial_delay
             logger.warning(f"Flood control: {str(e)}. Retrying in {delay} seconds...")
             await asyncio.sleep(delay)
             attempt += 1
-            delay *= 2  # Exponential backoff
+            delay *= 2
         except Exception as e:
             logger.error(f"Failed to set webhook: {str(e)}")
             raise
@@ -97,17 +102,15 @@ async def set_webhook_with_retry(bot, webhook_url, max_attempts=5, initial_delay
 @app.on_event("startup")
 async def startup_event():
     await init_db()
-    # Инициализация Telegram бота с webhook
     try:
         bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
         bot_app.add_handler(CommandHandler("start", start_command))
         await bot_app.initialize()
-        # Set webhook with retry
         webhook_url = f"{RENDER_URL}/telegram_webhook"
         await set_webhook_with_retry(bot_app.bot, webhook_url)
         await bot_app.start()
         app.state.bot_app = bot_app
-        logger.info(f"Telegram bot initialized")
+        logger.info("Telegram bot initialized")
     except Exception as e:
         logger.error(f"Failed to initialize Telegram bot: {str(e)}")
         raise
@@ -133,7 +136,14 @@ async def start_command(update: Update, context):
         )
         keyboard = [[{"text": "Открыть приложение", "web_app": {"url": RENDER_URL}}]]
         await update.message.reply_text(welcome_message, reply_markup={"inline_keyboard": keyboard})
-        logger.info(f"Sent /start response to user {update.effective_user.id}")
+        user = update.effective_user
+        logger.info(f"Sent /start response to user {user.id}")
+        # Регистрируем пользователя автоматически
+        await register_user(UserProfile(
+            telegram_id=user.id,
+            username=user.username,
+            first_name=user.first_name
+        ))
     except Exception as e:
         logger.error(f"Error in start_command: {str(e)}")
 
@@ -153,18 +163,46 @@ async def telegram_webhook(request: Request):
 
 # Регистрация пользователя
 @app.post("/api/register_user")
-async def register_user(telegram_id: int):
+async def register_user(profile: UserProfile):
     try:
         conn = await asyncpg.connect(DATABASE_URL)
         await conn.execute(
-            "INSERT INTO users (telegram_id) VALUES ($1) ON CONFLICT DO NOTHING",
+            '''
+            INSERT INTO users (telegram_id, username, first_name)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (telegram_id) DO UPDATE
+            SET username = EXCLUDED.username, first_name = EXCLUDED.first_name
+            ''',
+            profile.telegram_id, profile.username, profile.first_name
+        )
+        await conn.close()
+        logger.info(f"Registered/updated user {profile.telegram_id}")
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error registering user {profile.telegram_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+# Получение профиля пользователя
+@app.get("/api/profile")
+async def get_profile(telegram_id: int):
+    try:
+        conn = await asyncpg.connect(DATABASE_URL)
+        row = await conn.fetchrow(
+            "SELECT telegram_id, username, first_name FROM users WHERE telegram_id = $1",
             telegram_id
         )
         await conn.close()
-        logger.info(f"Registered user {telegram_id}")
-        return {"status": "success"}
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {
+            "telegram_id": row["telegram_id"],
+            "username": row["username"],
+            "first_name": row["first_name"]
+        }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error registering user {telegram_id}: {str(e)}")
+        logger.error(f"Error fetching profile for user {telegram_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 # Поиск объявлений
@@ -189,7 +227,6 @@ async def search(request: SearchRequest):
                (request.rooms == "studio" and "студия" in (listing['description'] or "").lower())
         ]
         
-        # Заглушка для теста
         if not filtered_listings:
             filtered_listings = [{
                 'price': 200,
@@ -202,7 +239,6 @@ async def search(request: SearchRequest):
             }]
             logger.warning(f"No results from Kufar for {request.city}. Using stub data.")
 
-        # Сохранение в базу
         conn = await asyncpg.connect(DATABASE_URL)
         for listing in filtered_listings:
             listing_id = uuid.uuid4()
@@ -289,8 +325,12 @@ async def get_new_listings(telegram_id: int):
 async def get_user_listings(telegram_id: int):
     try:
         conn = await asyncpg.connect(DATABASE_URL)
-        rows = await conn.fetch(
+        listings = await conn.fetch(
             "SELECT * FROM listings WHERE telegram_id = $1 AND source = 'user'",
+            telegram_id
+        )
+        user = await conn.fetchrow(
+            "SELECT telegram_id, username, first_name FROM users WHERE telegram_id = $1",
             telegram_id
         )
         await conn.close()
@@ -307,10 +347,16 @@ async def get_user_listings(telegram_id: int):
             "image": row['image'],
             "date": row['created_at'].isoformat(),
             "source": row['source']
-        } for row in rows]
+        } for row in listings]
+        
+        profile = {
+            "telegram_id": user["telegram_id"],
+            "username": user["username"],
+            "first_name": user["first_name"]
+        } if user else None
         
         logger.info(f"Returned {len(ads)} user listings for user {telegram_id}")
-        return {"ads": ads, "favorites": 0, "messages": 0}
+        return {"ads": ads, "profile": profile, "favorites": 0, "messages": 0}
     except Exception as e:
         logger.error(f"Error fetching user listings for user {telegram_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -331,7 +377,7 @@ async def add_listing(
     try:
         image_url = None
         if photos:
-            image_url = f"https://example.com/images/{uuid.uuid4()}.jpg"  # Replace with actual storage logic
+            image_url = f"https://example.com/images/{uuid.uuid4()}.jpg"
         
         conn = await asyncpg.connect(DATABASE_URL)
         listing_id = uuid.uuid4()
