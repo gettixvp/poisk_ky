@@ -16,7 +16,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def parse_kufar(city="minsk", min_price=100, max_price=300):
-    # Правильная ссылка
     base_url = "https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno/bez-posrednikov"
     url = base_url.format(city=city.lower()) + f"?cur=USD&prc=r%3A{min_price}%2C{max_price}&size=30"
     
@@ -29,7 +28,9 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
         "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive"
+        "Connection": "keep-alive",
+        "Referer": "https://re.kufar.by/",
+        "DNT": "1"
     }
 
     session = requests.Session()
@@ -49,12 +50,19 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
             logger.warning(f"No listings found at {url}")
             return []
 
-        listings = soup.find_all('div', class_='styles_wrapper__Q06m9')
+        # Попробуем разные селекторы
+        listings = soup.find_all('div', class_=re.compile(r'styles_wrapper__\w+'))
+        if not listings:
+            listings = soup.find_all('article')
+            logger.info(f"Tried alternative selector: found {len(listings)} articles")
+        
         if not listings:
             logger.error(f"No listing elements found for {url}")
             with open("kufar_error.html", "w", encoding="utf-8") as f:
                 f.write(response.text)
-            logger.info("Saved raw HTML to kufar_error.html")
+            logger.info(".saved raw HTML to kufar_error.html")
+            # Логируем структуру страницы
+            logger.debug(f"Page structure: {soup.find('body').prettify()[:1000]}")
             return []
 
         parsed_data = []
@@ -69,13 +77,13 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
                     listing_url = f"https://re.kufar.by{listing_url}"
 
                 # Price
-                price_elem = listing.find('div', class_='styles_price__usd__HpXMa')
+                price_elem = listing.find('div', class_=re.compile(r'styles_price__usd__\w+'))
                 price_text = price_elem.text.strip() if price_elem else ""
                 price_match = re.search(r'\d+', price_text.replace('$', '').replace(' ', ''))
                 price = int(price_match.group()) if price_match else None
 
                 # Parameters
-                params_elem = listing.find('div', class_='styles_parameters__7zKlL')
+                params_elem = listing.find('div', class_=re.compile(r'styles_parameters__\w+'))
                 rooms, area, floor_info = None, None, None
                 if params_elem:
                     params_text = params_elem.text
@@ -87,15 +95,15 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
                     floor_info = floor_match.group(0) if floor_match else None
 
                 # Description
-                desc_elem = listing.find('div', class_=re.compile(r'styles_body__5BrnC.*styles_body__r33c8'))
+                desc_elem = listing.find('div', class_=re.compile(r'styles_body__\w+'))
                 description = desc_elem.text.strip() if desc_elem else None
 
                 # Address
-                address_elem = listing.find('div', class_='styles_address__l6Qe_')
+                address_elem = listing.find('div', class_=re.compile(r'styles_address__\w+'))
                 address = address_elem.text.strip() if address_elem else None
 
                 # Image
-                image_elem = listing.find('img', class_='styles_image__4Wy4_')
+                image_elem = listing.find('img')
                 image = image_elem['src'] if image_elem and 'src' in image_elem.attrs else "https://via.placeholder.com/150"
 
                 parsed_data.append({
