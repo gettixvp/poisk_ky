@@ -8,29 +8,31 @@ logging.basicConfig(level=logging.INFO, filename='kufar_parser.log', filemode='a
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 def parse_kufar(city="minsk", min_price=100, max_price=300):
-    url = f"https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno/bez-posrednikov?cur=USD&prc=r%3A{min_price}%2C{max_price}"
+    url = f"https://www.kufar.by/l/r~{city}/kvartiry/snyat?cur=USD&prc=r%3A{min_price}%2C{max_price}&sort=lst.d"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5"
     }
 
     try:
-        # Задержка для предотвращения блокировок
-        time.sleep(2)
+        time.sleep(3)  # Задержка для предотвращения блокировок
         response = requests.get(url, headers=headers, timeout=15)
         logging.info(f"HTTP статус для {url}: {response.status_code}")
         logging.debug(f"Первые 500 символов ответа: {response.text[:500]}")
         response.raise_for_status()
+
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Проверка на пустую страницу
-        if "Объявлений не найдено" in response.text:
+        if "ничего не найдено" in response.text.lower():
             logging.warning(f"На странице {url} объявлений не найдено")
             return []
 
-        # Обновленные классы (на случай изменений)
-        listings = soup.find_all('div', class_=re.compile(r'styles_wrapper__\w+'))
+        # Обновленные селекторы
+        listings = soup.find_all('a', class_=re.compile(r'listing-item'))
         if not listings:
-            logging.error(f"Не найдены элементы с классом styles_wrapper для {url}")
+            logging.error(f"Не найдены элементы с классом listing-item для {url}")
             return []
 
         parsed_data = []
@@ -38,10 +40,14 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
 
         for listing in listings:
             try:
-                price_elem = listing.find('div', class_=re.compile(r'styles_price__usd__\w+'))
-                price = int(re.search(r'\d+', price_elem.text).group()) if price_elem else None
+                # Цена
+                price_elem = listing.find('span', class_=re.compile(r'price'))
+                price_text = price_elem.text.strip() if price_elem else ""
+                price_match = re.search(r'\d+', price_text.replace(' ', ''))
+                price = int(price_match.group()) if price_match else None
 
-                params_elem = listing.find('div', class_=re.compile(r'styles_parameters__\w+'))
+                # Параметры
+                params_elem = listing.find('p', class_=re.compile(r'params'))
                 rooms, area, floor_info = None, None, None
                 if params_elem:
                     params_text = params_elem.text
@@ -52,13 +58,16 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
                     area = int(area_match.group(1)) if area_match else None
                     floor_info = floor_match.group(0) if floor_match else None
 
-                description_elem = listing.find('div', class_=re.compile(r'styles_body__\w+'))
+                # Описание
+                description_elem = listing.find('p', class_=re.compile(r'description'))
                 description = description_elem.text.strip() if description_elem else None
 
-                address_elem = listing.find('div', class_=re.compile(r'styles_address__\w+'))
+                # Адрес
+                address_elem = listing.find('span', class_=re.compile(r'address'))
                 address = address_elem.text.strip() if address_elem else None
 
-                image_elem = listing.find('img', class_=re.compile(r'styles_segments__\w+'))
+                # Изображение
+                image_elem = listing.find('img')
                 image = image_elem['src'] if image_elem and 'src' in image_elem.attrs else None
 
                 parsed_data.append({
@@ -70,6 +79,7 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
                     'address': address,
                     'image': image
                 })
+                logging.debug(f"Спарсено объявление: price={price}, rooms={rooms}, area={area}")
 
             except Exception as e:
                 logging.error(f"Ошибка при парсинге объявления: {str(e)}")
