@@ -52,7 +52,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
-            margin-top: 25px;
             font-family: 'Inter', sans-serif;
             background-color: var(--tg-theme-bg-color, #f8fafc);
             color: var(--tg-theme-text-color, #1e293b);
@@ -220,19 +219,19 @@
             box-shadow: var(--tg-theme-bg-color, black) 0px 0px 0px 0px, var(--tg-theme-bg-color, black) 0px 0px 0px 0px, rgba(255, 255, 255, 0.1) 0px 10px 15px -3px, rgba(255, 255, 255, 0.1) 0px 4px 6px -4px;
         }
         .safe-area {
-            padding-top: 30vh;
+            padding-top: 0vh;
             padding-left: var(--tg-safe-area-inset-left, 0px);
             padding-right: var(--tg-safe-area-inset-right, 0px);
             min-height: var(--tg-viewport-stable-height, 0h);
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            height: var(--tg-viewport-stable-height, 60vh);
+            height: var(--tg-viewport-stable-height, 100vh);
         }
         .content-wrapper {
             flex-grow: 1;
             overflow-y: auto;
-            padding-bottom: calc(0px + var(--tg-safe-area-inset-bottom, 10px));
+            padding-bottom: 60;
             -webkit-overflow-scrolling: touch;
         }
         .bottom-nav {
@@ -244,13 +243,13 @@
             background-color: var(--tg-theme-secondary-bg-color, white);
             border-top: 1px solid var(--tg-theme-hint-color, #e5e7eb);
             padding-bottom: var(--tg-safe-area-inset-bottom, 0px);
-            height: calc(60px + var(--tg-safe-area-inset-bottom, 0px));
-            box-sizing: content-box;
+            height: 60px; /* Убрали добавление safe-area-inset-bottom к высоте */
+            box-sizing: border-box; /* Добавили для правильного учета padding */
             box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
             display: flex;
             justify-content: space-around;
-            align-items: flex-start;
-            padding-top: 6px;
+            align-items: center; /* Изменили с flex-start на center */
+            padding-top: 0; /* Убрали padding-top */
         }
         body.dark .bottom-nav {
             background-color: #1f2937;
