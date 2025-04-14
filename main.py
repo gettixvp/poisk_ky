@@ -1,7 +1,7 @@
 import os
 import logging
 from fastapi import FastAPI, HTTPException, Form, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import asyncpg
@@ -65,12 +65,12 @@ async def init_db():
 @app.on_event("startup")
 async def startup_event():
     await init_db()
-    # Инициализация Telegram бота
+    # Инициализация Telegram бота с polling
     bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
     bot_app.add_handler(CommandHandler("start", start_command))
     await bot_app.initialize()
     await bot_app.start()
-    await bot_app.updater.start_polling()
+    await bot_app.updater.start_polling(drop_pending_updates=True)
 
 # Telegram /start команда
 async def start_command(update, context):
@@ -236,3 +236,13 @@ async def add_listing(
 async def serve_html():
     with open("static/index.html", "r") as f:
         return HTMLResponse(content=f.read())
+
+# Поддержка HEAD для здоровья
+@app.head("/")
+async def head_root():
+    return Response(status_code=200)
+
+# Favicon заглушка
+@app.get("/favicon.ico")
+async def favicon():
+    return Response(status_code=204)
