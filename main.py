@@ -358,7 +358,8 @@ async def get_user_listings(telegram_id: int):
     try:
         conn = await asyncpg.connect(DATABASE_URL)
         listings = await conn.fetch(
-            "SELECT * FROM listings WHERE telegram_id = $1 AND source = 'user'"
+            "SELECT * FROM listings WHERE telegram_id = $1 AND source = 'user'",
+            telegram_id
         )
         user = await conn.fetchrow(
             "SELECT telegram_id, username, first_name FROM users WHERE telegram_id = $1",
