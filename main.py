@@ -69,6 +69,7 @@ async def init_db():
                 city TEXT,
                 address TEXT,
                 image TEXT,
+                listing_url TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 source TEXT DEFAULT 'user'
             );
@@ -138,7 +139,6 @@ async def start_command(update: Update, context):
         await update.message.reply_text(welcome_message, reply_markup={"inline_keyboard": keyboard})
         user = update.effective_user
         logger.info(f"Sent /start response to user {user.id}")
-        # Регистрируем пользователя автоматически
         await register_user(UserProfile(
             telegram_id=user.id,
             username=user.username,
@@ -235,7 +235,8 @@ async def search(request: SearchRequest):
                 'floor': 'этаж 5 из 9',
                 'description': 'Тестовая квартира для отладки',
                 'address': 'ул. Тестовая 123, Минск',
-                'image': 'https://via.placeholder.com/150'
+                'image': 'https://via.placeholder.com/150',
+                'listing_url': 'https://example.com/test'
             }]
             logger.warning(f"No results from Kufar for {request.city}. Using stub data.")
 
@@ -245,13 +246,13 @@ async def search(request: SearchRequest):
             title = f"Квартира в {request.city} - {listing['rooms'] or 'не указан'} комн."
             await conn.execute(
                 '''
-                INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, source)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, listing_url, source)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 ON CONFLICT DO NOTHING
                 ''',
                 listing_id, request.telegram_id, title, listing['description'],
                 listing['price'], str(listing['rooms']), listing['area'], request.city,
-                listing['address'], listing['image'], 'kufar'
+                listing['address'], listing['image'], listing.get('listing_url'), 'kufar'
             )
         await conn.close()
         
@@ -280,6 +281,7 @@ async def get_popular_ads():
             "city": row['city'],
             "address": row['address'],
             "image": row['image'],
+            "listing_url": row['listing_url'],
             "date": row['created_at'].isoformat(),
             "source": row['source']
         } for row in rows]
@@ -310,6 +312,7 @@ async def get_new_listings(telegram_id: int):
             "city": row['city'],
             "address": row['address'],
             "image": row['image'],
+            "listing_url": row['listing_url'],
             "date": row['created_at'].isoformat(),
             "source": row['source']
         } for row in rows]
@@ -345,6 +348,7 @@ async def get_user_listings(telegram_id: int):
             "city": row['city'],
             "address": row['address'],
             "image": row['image'],
+            "listing_url": row['listing_url'],
             "date": row['created_at'].isoformat(),
             "source": row['source']
         } for row in listings]
@@ -383,10 +387,10 @@ async def add_listing(
         listing_id = uuid.uuid4()
         await conn.execute(
             '''
-            INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, source)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, listing_url, source)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             ''',
-            listing_id, telegram_id, title, description, price, rooms, area, city, address, image_url, 'user'
+            listing_id, telegram_id, title, description, price, rooms, area, city, address, image_url, None, 'user'
         )
         await conn.close()
         
