@@ -6,6 +6,7 @@ import time
 import random
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from typing import Optional, List, Dict
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,9 +16,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def parse_kufar(city="minsk", min_price=100, max_price=300):
-    base_url = "https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno/bez-posrednikov"
-    url = base_url.format(city=city.lower()) + f"?cur=USD&prc=r%3A{min_price}%2C{max_price}&size=30"
+def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300, rooms: Optional[str] = None) -> List[Dict]:
+    base_url = "https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno"
+    rooms_part = f"/{rooms}" if rooms else ""
+    url = (
+        base_url.format(city=city.lower()) + 
+        rooms_part + 
+        "/bez-posrednikov" + 
+        f"?cur=USD&prc=r%3A{min_price}%2C{max_price}&size=30"
+    )
     
     headers = {
         "User-Agent": random.choice([
@@ -50,61 +57,54 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
             logger.warning(f"No listings found at {url}")
             return []
 
-        listings = soup.find_all('div', class_=re.compile(r'styles_wrapper__\w+'))
-        if not listings:
-            listings = soup.find_all('article')
-            logger.info(f"Tried alternative selector: found {len(listings)} articles")
-        
+        listings = soup.find_all('div', class_='styles_wrapper__Q06m9')
         if not listings:
             logger.error(f"No listing elements found for {url}")
             with open("kufar_error.html", "w", encoding="utf-8") as f:
                 f.write(response.text)
             logger.info("Saved raw HTML to kufar_error.html")
-            logger.debug(f"Page structure: {soup.find('body').prettify()[:1000]}")
             return []
 
         parsed_data = []
         logger.info(f"Found {len(listings)} listings at {url}")
 
-        for listing in listings:
+        for ad in listings:
             try:
                 # Listing URL
-                link_elem = listing.find('a', href=True)
+                link_elem = ad.find('a', href=True)
                 listing_url = link_elem['href'] if link_elem else None
                 if listing_url and not listing_url.startswith('http'):
                     listing_url = f"https://re.kufar.by{listing_url}"
 
                 # Price
-                price_elem = listing.find('div', class_=re.compile(r'styles_price__usd__\w+'))
-                price_text = price_elem.text.strip() if price_elem else ""
-                price_match = re.search(r'(\d+\.?\d*)', price_text.replace('$', '').replace('USD', '').replace(' ', ''))
-                price = int(float(price_match.group(1))) if price_match else None
+                price_element = ad.select_one(".styles_price__usd__HpXMa")
+                price = int(re.sub(r"\D", "", price_element.text)) if price_element else None
                 if not price:
-                    logger.warning(f"Failed to parse price from: {price_text}")
+                    logger.warning(f"Failed to parse price for listing: {listing_url}")
 
-                # Parameters
-                params_elem = listing.find('div', class_=re.compile(r'styles_parameters__\w+'))
+                # Rooms and Parameters
+                params_element = ad.select_one(".styles_parameters__7zKlL")
                 rooms, area, floor_info = None, None, None
-                if params_elem:
-                    params_text = params_elem.text
-                    rooms_match = re.search(r'(\d+)\s*комн\.|студия', params_text, re.I)
-                    area_match = re.search(r'(\d+)\s*м²', params_text)
-                    floor_match = re.search(r'этаж\s*(\d+)\s*из\s*(\d+)', params_text)
+                if params_element:
+                    params_text = params_element.text
+                    rooms_match = re.search(r"(\d+)\s*комн\.|студия", params_text, re.I)
+                    area_match = re.search(r"(\d+)\s*м²", params_text)
+                    floor_match = re.search(r"этаж\s*(\d+)\s*из\s*(\d+)", params_text)
                     rooms = int(rooms_match.group(1)) if rooms_match and rooms_match.group(1) else "studio" if rooms_match else None
                     area = int(area_match.group(1)) if area_match else None
                     floor_info = floor_match.group(0) if floor_match else None
 
                 # Description
-                desc_elem = listing.find('div', class_=re.compile(r'styles_body__\w+'))
-                description = desc_elem.text.strip() if desc_elem else None
+                desc_element = ad.select_one(".styles_body__5BrnC")
+                description = desc_element.text.strip() if desc_element else "Описание не указано 📝"
 
                 # Address
-                address_elem = listing.find('div', class_=re.compile(r'styles_address__\w+'))
-                address = address_elem.text.strip() if address_elem else None
+                address_element = ad.select_one(".styles_address__l6Qe_")
+                address = address_element.text.strip() if address_element else "Адрес не указан 🏠"
 
                 # Image
-                image_elem = listing.find('img')
-                image = image_elem['src'] if image_elem and 'src' in image_elem.attrs else "https://via.placeholder.com/150"
+                image_element = ad.select_one("img")
+                image = image_element.get("src") if image_element else "https://via.placeholder.com/150"
 
                 parsed_data.append({
                     'price': price,
