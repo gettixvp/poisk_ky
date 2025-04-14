@@ -41,7 +41,6 @@ class SearchRequest(BaseModel):
     min_price: Optional[int] = None
     max_price: Optional[int] = None
     rooms: Optional[str] = None
-    captcha_code: Optional[str] = None
 
 class UserProfile(BaseModel):
     telegram_id: int
@@ -253,24 +252,13 @@ async def get_profile(telegram_id: int):
 @app.post("/api/search")
 async def search(request: SearchRequest):
     try:
-        if request.captcha_code and request.captcha_code != "3A7B9C":
-            logger.warning(f"Invalid CAPTCHA for user {request.telegram_id}")
-            raise HTTPException(status_code=400, detail="INVALID_CAPTCHA")
-        
-        if not request.captcha_code:
-            logger.info(f"CAPTCHA required for user {request.telegram_id}")
-            return {"error": "CAPTCHA_REQUIRED"}
-        
-        listings = parse_kufar(city=request.city, min_price=request.min_price, max_price=request.max_price)
+        listings = parse_kufar(
+            city=request.city,
+            min_price=request.min_price,
+            max_price=request.max_price,
+            rooms=request.rooms
+        )
         logger.info(f"Parsed {len(listings)} listings for city {request.city}")
-        
-        # Фильтрация по комнатам
-        filtered_listings = [
-            listing for listing in listings
-            if not request.rooms or str(listing['rooms']) == request.rooms or 
-               (request.rooms == "4+" and listing['rooms'] and listing['rooms'] >= 4) or
-               (request.rooms == "studio" and "студия" in (listing['description'] or "").lower())
-        ]
         
         # Проверка дубликатов в базе
         conn = await asyncpg.connect(DATABASE_URL)
@@ -279,7 +267,7 @@ async def search(request: SearchRequest):
         )
         
         new_listings = []
-        for listing in filtered_listings[:10]:  # Берем до 10 объявлений
+        for listing in listings[:10]:  # Берем до 10 объявлений
             if listing.get('listing_url') and listing['listing_url'] not in existing_urls:
                 new_listings.append(listing)
                 listing_id = uuid.uuid4()
@@ -298,10 +286,8 @@ async def search(request: SearchRequest):
         
         await conn.close()
         
-        # Возвращаем до 10 объявлений (новые или существующие)
-        return {"ads": filtered_listings[:10] if filtered_listings else []}
-    except HTTPException:
-        raise
+        # Возвращаем до 10 объявлений
+        return {"ads": listings[:10] if listings else []}
     except Exception as e:
         logger.error(f"Error in search for user {request.telegram_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
