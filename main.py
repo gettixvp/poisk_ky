@@ -1,13 +1,13 @@
 import os
 import logging
-from fastapi import FastAPI, HTTPException, Form, UploadFile, File
+from fastapi import FastAPI, HTTPException, Form, UploadFile, File, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import asyncpg
 from parse_kufar import parse_kufar
-from telegram import Bot
-from telegram.ext import Application, CommandHandler
+from telegram import Update
+from telegram.ext import Application, CommandHandler, WebhookUpdate
 from dotenv import load_dotenv
 from typing import List, Optional
 import uuid
@@ -65,12 +65,20 @@ async def init_db():
 @app.on_event("startup")
 async def startup_event():
     await init_db()
-    # Инициализация Telegram бота
+    # Инициализация Telegram бота с webhook
     bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
     bot_app.add_handler(CommandHandler("start", start_command))
     await bot_app.initialize()
     await bot_app.start()
-    await bot_app.updater.start_polling(drop_pending_updates=True)
+    # Настройка webhook
+    webhook_url = f"{RENDER_URL}/telegram_webhook"
+    await bot_app.bot.set_webhook(url=webhook_url)
+    app.state.bot_app = bot_app
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if hasattr(app.state, "bot_app"):
+        await app.state.bot_app.stop()
 
 # Telegram /start команда
 async def start_command(update, context):
@@ -82,6 +90,14 @@ async def start_command(update, context):
     )
     keyboard = [[{"text": "Открыть приложение", "web_app": {"url": RENDER_URL}}]]
     await update.message.reply_text(welcome_message, reply_markup={"inline_keyboard": keyboard})
+
+# Webhook для Telegram
+@app.post("/telegram_webhook")
+async def telegram_webhook(request: Request):
+    update = await request.json()
+    update_obj = Update.de_json(update, app.state.bot_app.bot)
+    await app.state.bot_app.process_update(WebhookUpdate(update_obj))
+    return {"status": "ok"}
 
 # Регистрация пользователя
 @app.post("/api/register_user")
@@ -101,6 +117,8 @@ async def search(request: SearchRequest):
         raise HTTPException(status_code=400, detail="CAPTCHA_REQUIRED")
     
     listings = parse_kufar(city=request.city, min_price=request.min_price, max_price=request.max_price)
+    logging.info(f"Сырые данные парсинга для {request.city}: {listings}")
+    
     filtered_listings = [
         listing for listing in listings
         if not request.rooms or str(listing['rooms']) == request.rooms or 
@@ -108,7 +126,7 @@ async def search(request: SearchRequest):
            (request.rooms == "studio" and "студия" in (listing['description'] or "").lower())
     ]
     
-    # Заглушка для теста, если парсинг не дал результатов
+    # Заглушка для теста
     if not filtered_listings:
         filtered_listings = [{
             'price': 200,
@@ -229,7 +247,7 @@ async def add_listing(
 ):
     image_url = None
     if photos:
-        image_url = f"https://example.com/images/{uuid.uuid4()}.jpg"  # Имитация загрузки
+        image_url = f"https://example.com/images/{uuid.uuid4()}.jpg"
     
     conn = await asyncpg.connect(DATABASE_URL)
     listing_id = uuid.uuid4()
@@ -250,12 +268,12 @@ async def serve_html():
     with open("static/index.html", "r") as f:
         return HTMLResponse(content=f.read())
 
-# Поддержка HEAD для здоровья
+# Поддержка HEAD
 @app.head("/")
 async def head_root():
     return Response(status_code=200)
 
-# Favicon заглушка
+# Favicon
 @app.get("/favicon.ico")
 async def favicon():
     return Response(status_code=204)
@@ -265,7 +283,6 @@ async def favicon():
 async def get_logs():
     try:
         with open("kufar_parser.log", "r") as f:
-            # Читаем последние 50 строк
             lines = f.readlines()[-50:]
         return {"logs": "".join(lines)}
     except Exception as e:
