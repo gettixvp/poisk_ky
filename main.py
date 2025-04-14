@@ -52,8 +52,29 @@ class UserProfile(BaseModel):
 async def init_db():
     try:
         conn = await asyncpg.connect(DATABASE_URL)
-        # Drop anon_id if it exists, ensure correct schema
         await conn.execute('''
+            -- Drop dependent constraints
+            DO $$ 
+            BEGIN 
+                IF EXISTS (
+                    SELECT 1 
+                    FROM information_schema.table_constraints 
+                    WHERE constraint_name = 'ads_user_anon_id_fkey' 
+                    AND table_name = 'ads'
+                ) THEN
+                    ALTER TABLE ads DROP CONSTRAINT ads_user_anon_id_fkey;
+                END IF;
+                IF EXISTS (
+                    SELECT 1 
+                    FROM information_schema.table_constraints 
+                    WHERE constraint_name = 'pending_listings_user_anon_id_fkey' 
+                    AND table_name = 'pending_listings'
+                ) THEN
+                    ALTER TABLE pending_listings DROP CONSTRAINT pending_listings_user_anon_id_fkey;
+                END IF;
+            END $$;
+
+            -- Drop anon_id if it exists
             DO $$ 
             BEGIN 
                 IF EXISTS (
@@ -65,12 +86,14 @@ async def init_db():
                 END IF;
             END $$;
 
+            -- Ensure users table schema
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id BIGINT PRIMARY KEY,
                 username TEXT,
                 first_name TEXT
             );
 
+            -- Ensure listings table schema
             CREATE TABLE IF NOT EXISTS listings (
                 id UUID PRIMARY KEY,
                 telegram_id BIGINT,
