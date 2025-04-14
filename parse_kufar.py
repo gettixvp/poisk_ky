@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def parse_kufar(city="minsk", min_price=100, max_price=300):
-    # Correct URL
+    # Правильная ссылка
     base_url = "https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno/bez-posrednikov"
     url = base_url.format(city=city.lower()) + f"?cur=USD&prc=r%3A{min_price}%2C{max_price}&size=30"
     
