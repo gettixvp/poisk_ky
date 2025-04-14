@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import asyncpg
 from parse_kufar import parse_kufar
 from telegram import Update
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Updater, CommandHandler, Dispatcher
 from dotenv import load_dotenv
 from typing import List, Optional
 import uuid
@@ -77,31 +77,33 @@ async def startup_event():
     await init_db()
     # Инициализация Telegram бота с webhook
     try:
-        bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
-        bot_app.add_handler(CommandHandler("start", start_command))
-        await bot_app.initialize()
-        await bot_app.start()
-        # Настройка webhook
-        webhook_url = f"{RENDER_URL}/telegram_webhook"
-        await bot_app.bot.set_webhook(url=webhook_url)
-        app.state.bot_app = bot_app
-        logger.info(f"Telegram webhook set to {webhook_url}")
+        updater = Updater(TELEGRAM_TOKEN, use_context=True)
+        dispatcher = updater.dispatcher
+        dispatcher.add_handler(CommandHandler("start", start_command))
+        updater.start_webhook(
+            listen="0.0.0.0",
+            port=8443,  # Render allows this port for webhooks
+            url_path="/telegram_webhook",
+            webhook_url=f"{RENDER_URL}/telegram_webhook"
+        )
+        updater.bot.set_webhook(f"{RENDER_URL}/telegram_webhook")
+        app.state.updater = updater
+        logger.info(f"Telegram webhook set to {RENDER_URL}/telegram_webhook")
     except Exception as e:
         logger.error(f"Failed to initialize Telegram bot: {str(e)}")
         raise
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    if hasattr(app.state, "bot_app"):
+    if hasattr(app.state, "updater"):
         try:
-            await app.state.bot_app.stop()
-            await app.state.bot_app.shutdown()
+            app.state.updater.stop()
             logger.info("Telegram bot stopped")
         except Exception as e:
             logger.error(f"Error stopping Telegram bot: {str(e)}")
 
 # Telegram /start команда
-async def start_command(update, context):
+def start_command(update, context):
     try:
         welcome_message = (
             "🏠 Добро пожаловать в бот поиска квартир!\n\n"
@@ -110,7 +112,7 @@ async def start_command(update, context):
             "👉 Нажмите кнопку ниже, чтобы начать:"
         )
         keyboard = [[{"text": "Открыть приложение", "web_app": {"url": RENDER_URL}}]]
-        await update.message.reply_text(welcome_message, reply_markup={"inline_keyboard": keyboard})
+        update.message.reply_text(welcome_message, reply_markup={"inline_keyboard": keyboard})
         logger.info(f"Sent /start response to user {update.effective_user.id}")
     except Exception as e:
         logger.error(f"Error in start_command: {str(e)}")
@@ -120,9 +122,9 @@ async def start_command(update, context):
 async def telegram_webhook(request: Request):
     try:
         update = await request.json()
-        update_obj = Update.de_json(update, app.state.bot_app.bot)
+        update_obj = Update.de_json(update, app.state.updater.bot)
         if update_obj:
-            await app.state.bot_app.process_update(update_obj)
+            app.state.updater.dispatcher.process_update(update_obj)
             logger.debug(f"Processed Telegram update: {update_obj.update_id}")
         return {"status": "ok"}
     except Exception as e:
