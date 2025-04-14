@@ -50,7 +50,6 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
             logger.warning(f"No listings found at {url}")
             return []
 
-        # Попробуем разные селекторы
         listings = soup.find_all('div', class_=re.compile(r'styles_wrapper__\w+'))
         if not listings:
             listings = soup.find_all('article')
@@ -60,8 +59,7 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
             logger.error(f"No listing elements found for {url}")
             with open("kufar_error.html", "w", encoding="utf-8") as f:
                 f.write(response.text)
-            logger.info(".saved raw HTML to kufar_error.html")
-            # Логируем структуру страницы
+            logger.info("Saved raw HTML to kufar_error.html")
             logger.debug(f"Page structure: {soup.find('body').prettify()[:1000]}")
             return []
 
@@ -79,8 +77,10 @@ def parse_kufar(city="minsk", min_price=100, max_price=300):
                 # Price
                 price_elem = listing.find('div', class_=re.compile(r'styles_price__usd__\w+'))
                 price_text = price_elem.text.strip() if price_elem else ""
-                price_match = re.search(r'\d+', price_text.replace('$', '').replace(' ', ''))
-                price = int(price_match.group()) if price_match else None
+                price_match = re.search(r'(\d+\.?\d*)', price_text.replace('$', '').replace('USD', '').replace(' ', ''))
+                price = int(float(price_match.group(1))) if price_match else None
+                if not price:
+                    logger.warning(f"Failed to parse price from: {price_text}")
 
                 # Parameters
                 params_elem = listing.find('div', class_=re.compile(r'styles_parameters__\w+'))
