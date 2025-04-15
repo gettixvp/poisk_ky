@@ -64,7 +64,7 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
             logger.warning(f"No listings found at {url}")
             return []
 
-        listings = soup.find_all('div', class_='styles_wrapper__Q06m9')
+        listings = soup.find_all('a', class_='styles_wrapper__Q06m9')
         if not listings:
             logger.error(f"No listing elements found for {url}")
             # Дебаг: логируем классы div
@@ -85,8 +85,7 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
         for ad in listings:
             try:
                 # Listing URL
-                link_elem = ad.find('a', href=True)
-                listing_url = link_elem['href'] if link_elem else None
+                listing_url = ad.get('href')
                 if listing_url and not listing_url.startswith('http'):
                     listing_url = f"https://re.kufar.by{listing_url}"
 
@@ -120,6 +119,10 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
                 image_element = ad.select_one("img")
                 image = image_element.get("src") if image_element else "https://via.placeholder.com/150"
 
+                # Time
+                time_element = ad.select_one(".styles_date__ssUVP span")
+                time_posted = time_element.text.strip() if time_element else "Дата не указана"
+
                 parsed_data.append({
                     'price': price,
                     'rooms': rooms_val,
@@ -128,9 +131,10 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
                     'description': description,
                     'address': address,
                     'image': image,
-                    'listing_url': listing_url
+                    'listing_url': listing_url,
+                    'time_posted': time_posted
                 })
-                logger.debug(f"Parsed listing: price={price}, rooms={rooms_val}, area={area}, address={address}, url={listing_url}")
+                logger.debug(f"Parsed listing: price={price}, rooms={rooms_val}, area={area}, address={address}, time={time_posted}, url={listing_url}")
 
             except Exception as e:
                 logger.error(f"Error parsing listing: {str(e)}")
