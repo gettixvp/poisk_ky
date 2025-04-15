@@ -111,6 +111,7 @@ async def init_db():
                 image TEXT,
                 listing_url TEXT UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                time_posted TEXT,  -- Добавлено поле для времени публикации
                 source TEXT DEFAULT 'user'
             );
 
@@ -274,13 +275,17 @@ async def search(request: SearchRequest):
                 title = f"Квартира в {request.city} - {listing['rooms'] or 'не указан'} комн."
                 await conn.execute(
                     '''
-                    INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, listing_url, source)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    INSERT INTO listings (
+                        id, telegram_id, title, description, price, rooms, area, city, 
+                        address, image, listing_url, source, time_posted
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                     ON CONFLICT (listing_url) DO NOTHING
                     ''',
                     listing_id, request.telegram_id, title, listing['description'],
                     listing['price'], str(listing['rooms']), listing['area'], request.city,
-                    listing['address'], listing['image'], listing.get('listing_url'), 'kufar'
+                    listing['address'], listing['image'], listing.get('listing_url'), 'kufar',
+                    listing.get('time_posted')
                 )
                 existing_urls.add(listing['listing_url'])
         
@@ -312,6 +317,7 @@ async def get_popular_ads():
             "image": row['image'],
             "listing_url": row.get('listing_url', ''),
             "date": row['created_at'].isoformat(),
+            "time_posted": row['time_posted'],
             "source": row['source']
         } for row in rows]
         
@@ -343,6 +349,7 @@ async def get_new_listings(telegram_id: int):
             "image": row['image'],
             "listing_url": row.get('listing_url', ''),
             "date": row['created_at'].isoformat(),
+            "time_posted": row['time_posted'],
             "source": row['source']
         } for row in rows]
         
@@ -379,6 +386,7 @@ async def get_user_listings(telegram_id: int):
             "image": row['image'],
             "listing_url": row.get('listing_url', ''),
             "date": row['created_at'].isoformat(),
+            "time_posted": row['time_posted'],
             "source": row['source']
         } for row in listings]
         
@@ -416,10 +424,14 @@ async def add_listing(
         listing_id = uuid.uuid4()
         await conn.execute(
             '''
-            INSERT INTO listings (id, telegram_id, title, description, price, rooms, area, city, address, image, listing_url, source)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO listings (
+                id, telegram_id, title, description, price, rooms, area, city, 
+                address, image, listing_url, source, time_posted
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             ''',
-            listing_id, telegram_id, title, description, price, rooms, area, city, address, image_url, None, 'user'
+            listing_id, telegram_id, title, description, price, rooms, area, city, 
+            address, image_url, None, 'user', None
         )
         await conn.close()
         
