@@ -18,8 +18,14 @@ logger = logging.getLogger(__name__)
 
 def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300, rooms: Optional[str] = None) -> List[Dict]:
     base_url = "https://re.kufar.by/l/{city}/snyat/kvartiru-dolgosrochno"
-    # Если rooms указано, используем как есть (1k, 2k, studio)
-    rooms_part = f"/{rooms}k" if rooms else ""
+    # Обрабатываем rooms: 1 → 1k, 2 → 2k, studio без изменений
+    if rooms and rooms != "studio":
+        try:
+            rooms = f"{int(rooms)}k"  # Преобразуем 1 → 1k, 2 → 2k
+        except ValueError:
+            logger.warning(f"Invalid rooms value: {rooms}, treating as None")
+            rooms = None
+    rooms_part = f"/{rooms}" if rooms else ""
     url = (
         base_url.format(city=city.lower()) + 
         rooms_part + 
@@ -47,7 +53,7 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
 
     try:
         time.sleep(random.uniform(1, 3))
-        logger.info(f"Attempting to fetch URL: {url}")
+        logger.info(f"Attempting to fetch URL: {url} (rooms: {rooms})")
         response = session.get(url, headers=headers, timeout=10)
         logger.info(f"Fetching {url}: HTTP {response.status_code}")
         response.raise_for_status()
@@ -61,6 +67,13 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
         listings = soup.find_all('div', class_='styles_wrapper__Q06m9')
         if not listings:
             logger.error(f"No listing elements found for {url}")
+            # Дебаг: логируем классы div
+            divs = soup.find_all('div')
+            classes = set()
+            for div in divs:
+                if div.get('class'):
+                    classes.update(div.get('class'))
+            logger.debug(f"Found div classes: {classes}")
             with open("kufar_error.html", "w", encoding="utf-8") as f:
                 f.write(response.text)
             logger.info("Saved raw HTML to kufar_error.html")
