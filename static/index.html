@@ -51,15 +51,58 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        /* Основные стили для фиксированного интерфейса */
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--tg-theme-bg-color, #f8fafc);
             color: var(--tg-theme-text-color, #1e293b);
-            transition: background-color 0.3s ease, color 0.3s ease;
             margin: 0;
+            padding: 0;
             overscroll-behavior: none;
-            padding-bottom: 70px;
+            height: 100vh;
         }
+        
+        .safe-area {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .content-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 5vh; /* На 5% выше низа экрана */
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 480px;
+            height: 60px;
+            background-color: var(--tg-theme-secondary-bg-color, white);
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            padding: 0 10px;
+        }
+        
+        /* Остальные стили */
         body.dark {
             background-color: #1e293b;
             color: #ffffff;
@@ -218,127 +261,6 @@
         body.dark .apartment-card:hover {
             box-shadow: var(--tg-theme-bg-color, black) 0px 0px 0px 0px, var(--tg-theme-bg-color, black) 0px 0px 0px 0px, rgba(255, 255, 255, 0.1) 0px 10px 15px -3px, rgba(255, 255, 255, 0.1) 0px 4px 6px -4px;
         }
-        .safe-area {
-            padding-top: 0vh;
-            padding-left: var(--tg-safe-area-inset-left, 0px);
-            padding-right: var(--tg-safe-area-inset-right, 0px);
-            min-height: var(--tg-viewport-stable-height, 0h);
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            eight: var(--tg-viewport-stable-height, 80vh);
-        }
-        .content-wrapper {
-            padding-top: 20vh;
-            flex-grow: 1;
-            overflow-y: auto;
-            padding-bottom: 60;
-            -webkit-overflow-scrolling: touch;
-        }
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 10;
-            background-color: transparent;
-            padding-bottom: var(--tg-safe-area-inset-bottom, 0px);
-            height: 60px;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 8px; /* Добавляем отступ вокруг кнопок */
-        }
-        body.dark .bottom-nav {
-            background-color: #1f2937;
-            border-top-color: #374151;
-        }
-        .tab-btn {
-            color: var(--tg-theme-hint-color, #94a3b8);
-            transition: all 0.3s ease;
-            transform: translateY(0);
-        }
-        .tab-btn:hover {
-            transform: translateY(-4px);
-        }
-        .tab-btn.text-soft-primary {
-            color: var(--tg-theme-button-color, #6366f1);
-        }
-        .tab-btn i { 
-            font-size: 20px;
-            transition: transform 0.3s ease;
-        }
-        .tab-btn.active i {
-            transform: translateY(-6px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .tab-btn span { 
-            font-size: 10px; 
-            margin-top: 2px; 
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: var(--tg-theme-button-color, #6366f1);
-        }
-        .toggle-checkbox:checked + .toggle-label::after {
-            transform: translateX(100%);
-        }
-        .toggle-label {
-            width: 44px;
-            height: 24px;
-            border-radius: 9999px;
-            background-color: #e5e7eb;
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.2s ease;
-            display: inline-block;
-        }
-        body.dark .toggle-label {
-            background-color: #4b5563;
-        }
-        .toggle-label::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: white;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .captcha-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
-        }
-        .captcha-modal.active {
-            display: flex;
-            animation: fadeIn 0.3s ease-out;
-        }
-        .captcha-content {
-            background: var(--tg-theme-bg-color, #f8fafc);
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            animation: slideUp 0.4s ease-out;
-        }
-        body.dark .captcha-content {
-            background: #1e293b;
-            color: #ffffff;
-        }
         .welcome-card {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
@@ -427,6 +349,105 @@
         body.dark .tooltip-text {
             background-color: #f8fafc;
             color: #1e293b;
+        }
+        
+        /* Стили для кнопок навигации */
+        .tab-btn {
+            color: var(--tg-theme-hint-color, #94a3b8);
+            transition: all 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            max-width: 80px;
+        }
+        
+        .tab-btn:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        
+        .tab-btn.active {
+            color: var(--tg-theme-button-color, #6366f1);
+            transform: translateY(-5px);
+        }
+        
+        .tab-btn i {
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active i {
+            transform: scale(1.2);
+        }
+        
+        .tab-btn span {
+            font-size: 10px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: var(--tg-theme-button-color, #6366f1);
+        }
+        .toggle-checkbox:checked + .toggle-label::after {
+            transform: translateX(100%);
+        }
+        .toggle-label {
+            width: 44px;
+            height: 24px;
+            border-radius: 9999px;
+            background-color: #e5e7eb;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s ease;
+            display: inline-block;
+        }
+        body.dark .toggle-label {
+            background-color: #4b5563;
+        }
+        .toggle-label::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .captcha-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .captcha-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .captcha-content {
+            background: var(--tg-theme-bg-color, #f8fafc);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: slideUp 0.4s ease-out;
+        }
+        body.dark .captcha-content {
+            background: #1e293b;
+            color: #ffffff;
         }
     </style>
 </head>
