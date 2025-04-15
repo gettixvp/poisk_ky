@@ -924,18 +924,24 @@
         document.addEventListener('DOMContentLoaded', () => {
             tg.expand();
             tg.ready();
-
+            // Добавляем попытку открыть во весь экран
+            try {
+                tg.requestFullscreen();
+            } catch (e) {
+                console.log('Ошибка при попытке открыть во весь экран:', e);
+            }
+        
             triggerHapticFeedback('light');
-
+        
             userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
             if (!userId) {
                 alert('Не удалось определить пользователя. Пожалуйста, перезапустите приложение.');
                 return;
             }
-
+        
             // Загрузка кэша
             loadListingsCache();
-
+        
             // Инициализация
             setTimeout(() => {
                 fetch('/api/register_user', {
@@ -956,7 +962,7 @@
                     }
                 }).catch(err => console.error('Ошибка регистрации:', err));
             }, 1000);
-
+        
             // Добавляем вибрацию на все интерактивные элементы
             document.querySelectorAll('button, a, .image-upload, select, input[type="file"]').forEach(el => {
                 el.addEventListener('click', () => triggerHapticFeedback('light'));
