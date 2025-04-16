@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Поиск Квартир</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,14 +13,14 @@
                 extend: {
                     colors: {
                         soft: {
-                            primary: '#6366f1',
+                            primary: '#6366f1', // Telegram Button Color
                             secondary: '#8b5cf6',
-                            dark: '#1e293b',
-                            light: '#f8fafc',
-                            gray: '#94a3b8',
+                            dark: '#1e293b',   // Telegram BG Color (Dark)
+                            light: '#f8fafc',  // Telegram BG Color (Light)
+                            gray: '#94a3b8',   // Telegram Hint Color
                             success: '#10b981',
                             warning: '#f59e0b',
-                            danger: '#ef4444',
+                            danger: '#ef4444', // Telegram Destructive Text Color
                             info: '#3b82f6'
                         }
                     },
@@ -30,7 +30,7 @@
                         'soft-xl': '0 15px 40px rgba(0, 0, 0, 0.15)'
                     },
                     animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'fade-in': 'fadeIn 0.3s ease-out',
                         'slide-up': 'slideUp 0.4s ease-out',
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'bounce-slow': 'bounce 2s infinite'
@@ -52,49 +52,65 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-        /* Основные стили для фиксированного интерфейса */
+        /* Основные стили */
+        :root {
+            --tg-bg-color: var(--tg-theme-bg-color, #f8fafc);
+            --tg-text-color: var(--tg-theme-text-color, #1e293b);
+            --tg-hint-color: var(--tg-theme-hint-color, #94a3b8);
+            --tg-link-color: var(--tg-theme-link-color, #3b82f6);
+            --tg-button-color: var(--tg-theme-button-color, #6366f1);
+            --tg-button-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --tg-secondary-bg-color: var(--tg-theme-secondary-bg-color, #efeff4);
+            --tg-header-bg-color: var(--tg-theme-header-bg-color, #ffffff);
+            --tg-destructive-text-color: var(--tg-theme-destructive-text-color, #ef4444);
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--tg-theme-bg-color, #f8fafc);
-            color: var(--tg-theme-text-color, #1e293b);
+            background-color: var(--tg-bg-color);
+            color: var(--tg-text-color);
             margin: 0;
             padding: 0;
             overscroll-behavior: none;
-            height: 100vh;
-            padding-top: 0vh; /* Смещение всего интерфейса вниз на 20% */
+            min-height: 100vh;
+             min-height: var(--tg-viewport-stable-height, 100vh); /* Use stable height */
+             padding-bottom: env(safe-area-inset-bottom); /* iOS safe area */
         }
 
         .safe-area {
-            height: calc(100vh - 0vh);
+             height: var(--tg-viewport-stable-height, 100vh); /* Use stable height */
             display: flex;
             flex-direction: column;
             position: relative;
             max-width: 100%;
             margin: 0 auto;
+            overflow: hidden; /* Prevent body scroll */
         }
 
         .content-wrapper {
             flex: 1;
             overflow-y: auto;
-            padding-bottom: 80px;
-            padding-top: 15vh; /* Дополнительное смещение контента вниз на 15% */
+             padding: 1rem; /* Use padding instead of margin */
+             padding-bottom: 100px; /* Space for bottom nav */
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
+            scrollbar-width: none; /* Firefox */
         }
-
         .content-wrapper::-webkit-scrollbar {
-            display: none;
+            display: none; /* Safari and Chrome */
         }
 
         .bottom-nav {
             position: fixed;
-            bottom: 5vh;
+            bottom: 16px; /* Поднять чуть выше */
             left: 50%;
             transform: translateX(-50%);
-            width: calc(100% - 32px);
-            max-width: 480px;
+            width: calc(100% - 32px); /* Ширина с отступами */
+            max-width: 480px; /* Макс ширина для больших экранов */
             height: 60px;
-            background-color: #000000; /* Черный фон всегда */
+            /* background-color: #000000; */ /* Заменено на rgba + blur */
+            background-color: rgba(248, 250, 252, 0.8); /* Светлый полупрозрачный */
+            backdrop-filter: blur(10px); /* Blur effect */
+            -webkit-backdrop-filter: blur(10px); /* Blur for Safari */
             border-radius: 20px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             display: flex;
@@ -102,370 +118,130 @@
             align-items: center;
             z-index: 100;
             padding: 0 10px;
+            border: 1px solid rgba(0, 0, 0, 0.05); /* Легкая граница */
         }
 
         body.dark .bottom-nav {
-            background-color: #000000; /* Черный фон для темной темы */
+            background-color: rgba(30, 41, 59, 0.8); /* Темный полупрозрачный */
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.1); /* Светлая граница в темной теме */
         }
 
-        /* Остальные стили */
-        body.dark {
-            background-color: #1e293b;
-            color: #ffffff;
-        }
-        body.dark .soft-card {
-            background: rgba(45, 55, 72, 0.85);
-            border: 1px solid rgba(71, 85, 105, 0.5);
-            color: #ffffff;
-        }
-        body.dark .soft-input {
-            background: rgba(45, 55, 72, 0.7);
-            color: #ffffff;
-            border-color: #4b5563;
-        }
-        body.dark .soft-input::placeholder {
-            color: #9ca3af;
-        }
-        body.dark .soft-input:focus {
-            background: #374151;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-        }
-        body.dark .text-soft-dark {
-            color: #ffffff;
-        }
-        body.dark .text-soft-gray {
-            color: #d1d5db;
-        }
-        body.dark .text-soft-primary {
-            color: #ffffff;
-        }
-        body.dark .welcome-card {
-            color: #ffffff;
-        }
-        body.dark .price-tag {
-            color: #ffffff;
-        }
-        body.dark .feature-badge {
-            color: #ffffff;
-            background-color: rgba(99, 102, 241, 0.2);
-        }
-        .text-soft-dark { color: var(--tg-theme-text-color, #1e293b); }
-        .text-soft-gray { color: var(--tg-theme-hint-color, #94a3b8); }
-        .text-soft-primary { color: var(--tg-theme-button-color, #6366f1); }
+        /* Стили для темной темы */
+        body.dark { background-color: #1e293b; color: #f8fafc; }
+        body.dark .soft-card { background: rgba(45, 55, 72, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        body.dark .soft-input { background: rgba(45, 55, 72, 0.7); color: #f8fafc; border-color: #4b5563; }
+        body.dark .soft-input::placeholder { color: #9ca3af; }
+        body.dark .soft-input:focus { background: #374151; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3); }
+        body.dark .text-soft-dark { color: #f8fafc; }
+        body.dark .text-soft-gray { color: #d1d5db; }
+        body.dark .text-soft-primary { color: var(--tg-button-color, #8b99f1); } /* Адаптация цвета primary */
+        body.dark .welcome-card { color: #ffffff; }
+        body.dark .price-tag { color: #ffffff; background-color: rgba(0,0,0,0.7); }
+        body.dark .feature-badge { color: #c7d2fe; background-color: rgba(99, 102, 241, 0.2); }
+        body.dark .image-upload { border-color: #4b5563; background: rgba(71, 85, 105, 0.1); }
+        body.dark .image-upload:hover { background-color: rgba(99, 102, 241, 0.15); }
+        body.dark .skeleton { background-color: #334155; }
+        body.dark .tooltip-text { background-color: #f8fafc; color: #1e293b; }
+        body.dark .tab-btn { color: var(--tg-hint-color, #94a3b8); }
+        body.dark .tab-btn:hover { background-color: rgba(99, 102, 241, 0.15); }
+        body.dark .tab-btn.active { color: var(--tg-button-color, #8b99f1); }
+        body.dark .tab-btn.active i { color: var(--tg-button-color, #8b99f1); }
+        body.dark .toggle-label { background-color: #4b5563; }
+        body.dark .listing-overlay-modal .bg-white { background-color: #1e293b; } /* Фон модалки в темной теме */
+        body.dark .listing-overlay-modal .text-soft-dark { color: #f8fafc; }
+        body.dark .listing-overlay-modal .text-soft-gray { color: #d1d5db; }
+        body.dark .listing-overlay-modal .border-gray-200 { border-color: #4b5563; }
+        body.dark .listing-overlay-modal .bg-gray-50 { background-color: #374151; }
+
+
+        /* Общие стили компонентов */
+        .text-soft-dark { color: var(--tg-text-color, #1e293b); }
+        .text-soft-gray { color: var(--tg-hint-color, #94a3b8); }
+        .text-soft-primary { color: var(--tg-button-color, #6366f1); }
         .soft-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9); /* Чуть менее прозрачный */
+            backdrop-filter: blur(8px); /* Blur */
+            -webkit-backdrop-filter: blur(8px); /* Blur for Safari */
             border-radius: 12px;
             transition: all 0.3s ease;
-            border: 1px solid transparent;
+            border: 1px solid rgba(0, 0, 0, 0.05); /* Легкая граница */
         }
-        .soft-btn {
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        .soft-btn { transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); }
+        .soft-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); }
+        .soft-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+        .soft-input { transition: all 0.3s ease; background: rgba(229, 231, 235, 0.6); border-radius: 12px; border: 1px solid transparent; }
+        body.dark .soft-input { background: rgba(55, 65, 81, 0.6); }
+        .soft-input:focus { background: var(--tg-secondary-bg-color, #ffffff); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); border-color: var(--tg-button-color, #6366f1); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-out; }
+        .tab-content.active { display: block; }
+        .unread-badge { position: absolute; top: -4px; right: -4px; background-color: var(--tg-destructive-text-color, #ef4444); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; line-height: 18px; text-align: center; font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); animation: pulse-slow; }
+        .image-upload { border: 2px dashed var(--tg-hint-color, #cbd5e1); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(148, 163, 184, 0.05); }
+        .image-upload:hover { border-color: var(--tg-button-color, #6366f1); background-color: rgba(99, 102, 241, 0.08); }
+        .preview-image { position: relative; margin: 5px; }
+        .remove-image { position: absolute; top: -7px; right: -7px; background-color: var(--tg-destructive-text-color, #ef4444); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: background-color 0.2s ease; border: 1px solid rgba(255, 255, 255, 0.5); }
+        .remove-image:hover { background-color: #dc2626; }
+        .apartment-card { transition: all 0.3s ease; border-radius: 12px; overflow: hidden; cursor: pointer; }
+        .apartment-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0, 0, 0, 0.08); }
+        body.dark .apartment-card:hover { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2); }
+        .welcome-card { background: linear-gradient(135deg, var(--tg-button-color, #6366f1) 0%, #8b5cf6 100%); color: var(--tg-button-text-color, white); position: relative; overflow: hidden; }
+        .welcome-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%); transform: rotate(30deg); }
+        .price-tag { position: absolute; top: 10px; right: 10px; background-color: rgba(0,0,0,0.7); color: white; padding: 3px 8px; border-radius: 20px; font-size: 12px; font-weight: 600; backdrop-filter: blur(5px); }
+        .feature-badge { display: inline-flex; align-items: center; background-color: rgba(99, 102, 241, 0.1); color: var(--tg-button-color, #6366f1); padding: 3px 8px; border-radius: 20px; font-size: 12px; margin-right: 5px; margin-bottom: 5px; }
+        .skeleton { background-color: var(--tg-secondary-bg-color, #e2e8f0); border-radius: 8px; animation: pulse-slow 2s infinite; }
+        .loading-spinner { width: 24px; height: 24px; border: 3px solid rgba(99, 102, 241, 0.2); border-top-color: var(--tg-button-color, #6366f1); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tooltip { position: relative; }
+        .tooltip:hover .tooltip-text { visibility: visible; opacity: 1; transform: translateY(0); }
+        .tooltip-text { visibility: hidden; opacity: 0; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(5px); background-color: #1e293b; color: white; text-align: center; padding: 5px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1; transition: all 0.2s ease; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .tab-btn { color: var(--tg-hint-color, #94a3b8); transition: all 0.3s ease; padding: 8px 12px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; max-width: 80px; background: none; border: none; cursor: pointer; }
+        .tab-btn:hover { background-color: rgba(99, 102, 241, 0.1); }
+        .tab-btn.active { color: var(--tg-button-color, #6366f1); }
+        .tab-btn i { font-size: 20px; transition: all 0.3s ease; }
+        .tab-btn.active i { transform: scale(1.1); color: var(--tg-button-color, #6366f1); }
+        /* Красный цвет для активной иконки Избранное */
+        .tab-btn[data-tab="favorites-tab"].active .fa-heart { color: var(--tg-destructive-text-color, #ef4444); }
+        .tab-btn span { font-size: 10px; margin-top: 4px; font-weight: 500; }
+        .toggle-checkbox:checked + .toggle-label { background-color: var(--tg-button-color, #6366f1); }
+        .toggle-checkbox:checked + .toggle-label::after { transform: translateX(100%); }
+        .toggle-label { width: 44px; height: 24px; border-radius: 9999px; background-color: #e5e7eb; cursor: pointer; position: relative; transition: background-color 0.2s ease; display: inline-block; }
+        .toggle-label::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .captcha-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 100; justify-content: center; align-items: center; }
+        .captcha-modal.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        .captcha-content { background: var(--tg-bg-color); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; animation: slideUp 0.4s ease-out; }
+        .oval-btn { padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 500; }
+        /* Стили для кнопки Избранное на карточке */
+        .favorite-btn { background: none; border: none; cursor: pointer; padding: 0; }
+        .favorite-btn i { transition: color 0.2s ease, transform 0.2s ease; }
+        .favorite-btn:hover i { transform: scale(1.1); }
+        .favorite-btn.favorited .fa-heart {
+             font-family: "Font Awesome 6 Free"; /* Убедимся, что используется правильный шрифт */
+             font-weight: 900; /* Solid style */
+             color: var(--tg-destructive-text-color, #ef4444); /* Красный цвет */
         }
-        .soft-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        /* Стили для нового модального окна */
+        .listing-overlay-modal {
+            display: flex; /* По умолчанию flex */
+            transition: opacity 0.3s ease-out;
         }
-        .soft-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        .soft-input {
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
-        }
-        .soft-input:focus {
-            background: white;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-            border-color: transparent;
-        }
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease-out;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .unread-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background-color: var(--tg-theme-destructive-text-color, #ef4444);
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            line-height: 18px;
-            text-align: center;
-            font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-            animation: pulse-slow;
-        }
-        .image-upload {
-            border: 2px dashed var(--tg-theme-hint-color, #cbd5e1);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(148, 163, 184, 0.05);
-        }
-        body.dark .image-upload {
-            border-color: #4b5563;
-            background: rgba(71, 85, 105, 0.1);
-        }
-        .image-upload:hover {
-            border-color: var(--tg-theme-button-color, #6366f1);
-            background-color: rgba(99, 102, 241, 0.08);
-        }
-        body.dark .image-upload:hover {
-            background-color: rgba(99, 102, 241, 0.15);
-        }
-        .preview-image {
-            position: relative;
-            margin: 5px;
-        }
-        .remove-image {
-            position: absolute;
-            top: -7px;
-            right: -7px;
-            background-color: var(--tg-theme-destructive-text-color, #ef4444);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-        .remove-image:hover {
-            background-color: #dc2626;
-        }
-        .apartment-card {
-            transition: all 0.3s ease;
-            border-radius: 12px;
-            overflow: hidden;
-            cursor: pointer;
-        }
-        .apartment-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-        }
-        body.dark .apartment-card:hover {
-            box-shadow: 0 10px 15px rgba(255, 255, 255, 0.1);
-        }
-        .welcome-card {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-        .welcome-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-            transform: rotate(30deg);
-        }
-        .price-tag {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(0,0,0,0.7);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            backdrop-filter: blur(5px);
-        }
-        .feature-badge {
-            display: inline-flex;
-            align-items: center;
-            background-color: rgba(99, 102, 241, 0.1);
-            color: var(--tg-theme-button-color, #6366f1);
-            padding: 3px 8px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-right: 5px;
-            margin-bottom: 5px;
-        }
-        body.dark .feature-badge {
-            background-color: rgba(99, 102, 241, 0.2);
-        }
-        .skeleton {
-            background-color: #e2e8f0;
-            border-radius: 8px;
-            animation: pulse-slow 2s infinite;
-        }
-        body.dark .skeleton {
-            background-color: #334155;
-        }
-        .loading-spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(99, 102, 241, 0.2);
-            border-top-color: var(--tg-theme-button-color, #6366f1);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .tooltip {
-            position: relative;
-        }
-        .tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .tooltip-text {
-            visibility: hidden;
+        .listing-overlay-modal.hidden {
+            display: none; /* Скрываем через display */
             opacity: 0;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(5px);
-            background-color: #1e293b;
-            color: white;
-            text-align: center;
-            padding: 5px 10px; 
-            border-radius: 6px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 1;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        body.dark .tooltip-text {
-            background-color: #f8fafc;
-            color: #1e293b;
+        .listing-overlay-modal > div { /* Контент внутри */
+             transition: transform 0.4s ease-out;
         }
-        .tab-btn {
-            color: var(--tg-theme-hint-color, #94a3b8);
-            transition: all 0.3s ease;
-            padding: 8px 12px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex: 1;
-            max-width: 80px;
-        }
-        .tab-btn:hover {
-            background-color: rgba(99, 102, 241, 0.1);
-        }
-        .tab-btn.active {
-            color: var(--tg-theme-button-color, #6366f1); /* Синий цвет для активной вкладки */
-        }
-        .tab-btn i {
-            font-size: 20px;
-            transition: all 0.3s ease;
-        }
-        .tab-btn.active i {
-            transform: scale(1.1);
-            color: var(--tg-theme-button-color, #6366f1); /* Синий цвет для иконки активной вкладки */
-        }
-        .tab-btn span {
-            font-size: 10px;
-            margin-top: 4px;
-            font-weight: 500;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: var(--tg-theme-button-color, #6366f1);
-        }
-        .toggle-checkbox:checked + .toggle-label::after {
-            transform: translateX(100%);
-        }
-        .toggle-label {
-            width: 44px;
-            height: 24px;
-            border-radius: 9999px;
-            background-color: #e5e7eb;
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.2s ease;
-            display: inline-block;
-        }
-        body.dark .toggle-label {
-            background-color: #4b5563;
-        }
-        .toggle-label::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: white;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .captcha-modal, .listing-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
-        }
-        .captcha-modal.active, .listing-modal.active {
-            display: flex;
-            animation: fadeIn 0.3s ease-out;
-        }
-        .captcha-content, .listing-content {
-            background: var(--tg-theme-bg-color, #f8fafc);
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            animation: slideUp 0.4s ease-out;
-        }
-        body.dark .captcha-content, body.dark .listing-content {
-            background: #1e293b;
-            color: #ffffff;
-        }
-        .oval-btn {
-            padding: 6px 16px;
-            border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 500;
+        .listing-overlay-modal.hidden > div {
+             transform: translateY(20px);
         }
     </style>
 </head>
 <body class="bg-soft-light">
     <div class="max-w-md mx-auto safe-area">
         <div class="content-wrapper">
-            <div id="home-tab" class="tab-content active p-4">
+            <div id="home-tab" class="tab-content active">
                 <div class="mb-6">
-                    <div class="soft-card p-6 mb-6 shadow-soft welcome-card">
+                    <div class="soft-card p-6 shadow-soft welcome-card">
                         <h2 class="text-xl font-semibold text-white mb-3">Найдите идеальное жильё</h2>
                         <p class="text-white text-opacity-90 mb-4 text-sm">
                             Тысячи вариантов аренды квартир в Беларуси. Быстрый поиск и удобные фильтры.
@@ -474,8 +250,10 @@
                             <i class="fas fa-home text-white text-opacity-30 text-4xl"></i>
                         </div>
                     </div>
+                </div>
 
-                    <div class="soft-card p-6 shadow-soft mb-6">
+                <div class="mb-6">
+                     <div class="soft-card p-6 shadow-soft">
                         <h3 class="text-lg font-semibold text-soft-dark mb-4 flex items-center">
                             <i class="fas fa-sliders-h text-soft-primary mr-2"></i>
                             Параметры поиска
@@ -488,11 +266,11 @@
                                 </label>
                                 <div class="flex space-x-3">
                                     <div class="relative w-1/2">
-                                        <input type="number" id="min-price" placeholder="от" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm pl-8">
+                                        <input type="number" id="min-price" placeholder="от" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm pl-8">
                                         <i class="fas fa-arrow-down text-soft-gray absolute left-3 top-3.5 text-xs"></i>
                                     </div>
                                     <div class="relative w-1/2">
-                                        <input type="number" id="max-price" placeholder="до" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm pl-8">
+                                        <input type="number" id="max-price" placeholder="до" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm pl-8">
                                         <i class="fas fa-arrow-up text-soft-gray absolute left-3 top-3.5 text-xs"></i>
                                     </div>
                                 </div>
@@ -503,7 +281,7 @@
                                     Комнаты
                                 </label>
                                 <div class="relative">
-                                    <select id="rooms" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm">
+                                    <select id="rooms" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm appearance-none pr-8">
                                         <option value="">Любое количество</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
@@ -520,7 +298,7 @@
                                     Город
                                 </label>
                                 <div class="relative">
-                                    <select id="city" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm">
+                                    <select id="city" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm appearance-none pr-8">
                                         <option value="">Все города</option>
                                         <option value="minsk">Минск</option>
                                         <option value="brest">Брест</option>
@@ -545,38 +323,24 @@
                         Результаты поиска
                     </h3>
                     <div id="results-container" class="space-y-4">
-                        <div class="text-center text-soft-gray p-5 text-sm">Заполните параметры поиска и нажмите "Найти квартиру".</div>
-                    </div>
+                        </div>
                 </div>
 
                 <div class="mt-6">
-                    <h3 class="text-lg font-semibold text-soft-dark mb-4 flex items-center">
-                        <i class="fas fa-fire text-soft-warning mr-2"></i>
-                        Популярные предложения
-                    </h3>
-                    <div class="grid grid-cols-1 gap-4" id="popular-container">
-                        <div class="soft-card p-4 shadow-soft">
-                            <div class="flex space-x-4">
-                                <div class="skeleton w-20 h-20 rounded-lg"></div>
-                                <div class="flex-1 space-y-2">
-                                    <div class="skeleton h-4 w-3/4 rounded"></div>
-                                    <div class="skeleton h-3 w-1/2 rounded"></div>
-                                    <div class="skeleton h-3 w-2/3 rounded"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="soft-card p-4 shadow-soft">
-                            <div class="flex space-x-4">
-                                <div class="skeleton w-20 h-20 rounded-lg"></div>
-                                <div class="flex-1 space-y-2">
-                                    <div class="skeleton h-4 w-3/4 rounded"></div>
-                                    <div class="skeleton h-3 w-1/2 rounded"></div>
-                                    <div class="skeleton h-3 w-2/3 rounded"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                     <h3 class="text-lg font-semibold text-soft-dark dark:text-soft-light mb-4 flex items-center">
+                         <i class="fas fa-users text-soft-secondary mr-2"></i> Объявления пользователей </h3>
+                     <div class="grid grid-cols-1 gap-4" id="popular-container"> <div class="soft-card p-4 shadow-soft">
+                             <div class="flex space-x-4">
+                                 <div class="skeleton w-20 h-20 rounded-lg"></div>
+                                 <div class="flex-1 space-y-2">
+                                     <div class="skeleton h-4 w-3/4 rounded"></div>
+                                     <div class="skeleton h-3 w-1/2 rounded"></div>
+                                     <div class="skeleton h-3 w-2/3 rounded"></div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     </div>
             </div>
 
             <div id="new-tab" class="tab-content p-4">
@@ -589,7 +353,7 @@
                 </div>
                 <div class="space-y-6">
                     <div>
-                        <h3 class="text-lg font-semibold text-soft-dark mb-4">Объявления Kufar</h3>
+                        <h3 class="text-lg font-semibold text-soft-dark mb-4">Объявления Kufar (Пример)</h3>
                         <div class="space-y-4" id="kufar-listings">
                             <div class="text-center py-10">
                                 <div class="loading-spinner mb-3"></div>
@@ -597,22 +361,13 @@
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-soft-dark mb-4">Объявления пользователей</h3>
-                        <div class="space-y-4" id="user-new-listings">
-                            <div class="text-center py-10">
-                                <p class="text-sm text-soft-gray">Нет пользовательских объявлений</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                     </div>
             </div>
 
             <div id="user-tab" class="tab-content p-4">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-xl font-semibold text-soft-dark flex items-center">
-                        <i class="fas fa-home text-soft-primary mr-2"></i>
-                        Мои объявления
+                        <i class="fas fa-list text-soft-primary mr-2"></i> Мои объявления
                     </h2>
                     <button id="add-listing-btn" class="soft-btn bg-soft-primary text-white py-2 px-4 rounded-xl text-sm flex items-center font-medium hover:shadow-lg transition-all duration-300">
                         <i class="fas fa-plus mr-1 text-xs"></i> Добавить
@@ -620,42 +375,35 @@
                 </div>
 
                 <div id="user-listings" class="space-y-4">
-                    <div class="text-center py-10">
-                        <i class="fas fa-home text-soft-gray text-3xl mb-3"></i>
-                        <p class="text-sm text-soft-gray">У вас пока нет объявлений</p>
-                        <button id="add-first-listing" class="soft-btn mt-4 bg-gradient-to-r from-soft-primary to-soft-secondary text-white py-2 px-6 rounded-xl text-sm font-medium">
-                            Добавить первое объявление
-                        </button>
                     </div>
-                </div>
 
                 <div id="add-listing-form" class="hidden mt-6">
                     <div class="soft-card p-6 shadow-soft">
                         <h3 class="text-lg font-semibold text-soft-dark mb-5 flex items-center">
                             <i class="fas fa-plus-circle text-soft-primary mr-2"></i>
-                            Новое объявление
-                        </h3>
+                            <span id="form-title">Новое объявление</span> </h3>
                         <form id="listing-form" class="space-y-4">
+                            <input type="hidden" name="ad_id" value="">
+
                             <div>
                                 <label class="block text-sm font-medium text-soft-dark mb-1 flex items-center">
                                     <i class="fas fa-heading text-soft-gray mr-1 text-xs"></i>
                                     Заголовок <span class="text-red-500 ml-1">*</span>
                                 </label>
-                                <input type="text" name="title" required class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="Напр., Уютная 1-комнатная квартира">
+                                <input type="text" name="title" required class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="Напр., Уютная 1-комнатная квартира">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-soft-dark mb-1 flex items-center">
                                     <i class="fas fa-align-left text-soft-gray mr-1 text-xs"></i>
                                     Описание
                                 </label>
-                                <textarea name="description" rows="4" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="Подробно опишите ваше жилье..."></textarea>
+                                <textarea name="description" rows="4" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="Подробно опишите ваше жилье..."></textarea>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-soft-dark mb-1 flex items-center">
                                     <i class="fas fa-dollar-sign text-soft-gray mr-1 text-xs"></i>
-                                    Цена ($/месяц) <span class="text-red-500 ml-1">*</span>
-                                </label>
-                                <input type="number" name="price" required class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="500">
+                                    Цена ($) <span class="text-red-500 ml-1">*</span> </label>
+                                <input type="number" name="price" required class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="500">
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
@@ -663,20 +411,21 @@
                                         <i class="fas fa-door-open text-soft-gray mr-1 text-xs"></i>
                                         Комнаты <span class="text-red-500 ml-1">*</span>
                                     </label>
-                                    <select name="rooms" required class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm">
+                                    <select name="rooms" required class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm appearance-none pr-8">
                                         <option value="1">1</option>
                                         <option value="2" selected>2</option>
                                         <option value="3">3</option>
                                         <option value="4+">4+</option>
                                         <option value="studio">Студия</option>
                                     </select>
+                                     <i class="fas fa-chevron-down text-soft-gray absolute right-3 top-3.5 text-xs pointer-events-none"></i>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-soft-dark mb-1 flex items-center">
                                         <i class="fas fa-ruler-combined text-soft-gray mr-1 text-xs"></i>
                                         Площадь (м²)
                                     </label>
-                                    <input type="number" name="area" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="45">
+                                    <input type="number" name="area" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="45">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
@@ -685,7 +434,7 @@
                                         <i class="fas fa-city text-soft-gray mr-1 text-xs"></i>
                                         Город <span class="text-red-500 ml-1">*</span>
                                     </label>
-                                    <select name="city" required class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm">
+                                    <select name="city" required class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm appearance-none pr-8">
                                         <option value="minsk" selected>Минск</option>
                                         <option value="brest">Брест</option>
                                         <option value="vitebsk">Витебск</option>
@@ -693,13 +442,14 @@
                                         <option value="grodno">Гродно</option>
                                         <option value="mogilev">Могилев</option>
                                     </select>
+                                     <i class="fas fa-chevron-down text-soft-gray absolute right-3 top-3.5 text-xs pointer-events-none"></i>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-soft-dark mb-1 flex items-center">
                                         <i class="fas fa-map-marker-alt text-soft-gray mr-1 text-xs"></i>
                                         Адрес
                                     </label>
-                                    <input type="text" name="address" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="ул. Ленина, 10">
+                                    <input type="text" name="address" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm" placeholder="ул. Ленина, 10">
                                 </div>
                             </div>
                             <div>
@@ -713,11 +463,12 @@
                                     <p class="text-soft-gray text-xs mt-1">Рекомендуем добавлять качественные фото</p>
                                     <input type="file" id="file-input" name="photos" accept="image/jpeg, image/png, image/webp" multiple class="hidden">
                                 </div>
-                                <div id="preview-container" class="flex flex-wrap mt-3 -mx-1"></div>
+                                <div id="preview-container" class="flex flex-wrap mt-3 -mx-1">
+                                     </div>
                             </div>
                             <div class="flex space-x-3 pt-3">
                                 <button type="submit" class="soft-btn flex-1 bg-gradient-to-r from-soft-primary to-soft-secondary text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                                    <i class="fas fa-paper-plane mr-2"></i>Опубликовать
+                                    <i class="fas fa-paper-plane mr-2"></i><span id="submit-btn-text">Опубликовать</span>
                                 </button>
                                 <button type="button" id="cancel-btn" class="soft-btn flex-1 bg-gray-200 dark:bg-gray-600 text-soft-dark py-3 px-4 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-all duration-300">
                                     Отмена
@@ -728,11 +479,24 @@
                 </div>
             </div>
 
+            <div id="favorites-tab" class="tab-content p-4">
+                <h2 class="text-xl font-semibold text-soft-dark dark:text-soft-light mb-6 flex items-center">
+                    <i class="fas fa-heart text-red-500 mr-2"></i>
+                    Избранные объявления
+                </h2>
+                <div id="favorites-container" class="space-y-4">
+                    <div class="text-center py-10">
+                        <i class="fas fa-heart-broken text-soft-gray text-3xl mb-3"></i>
+                        <p class="text-sm text-soft-gray">Вы пока ничего не добавили в избранное.</p>
+                    </div>
+                </div>
+            </div>
+
             <div id="profile-tab" class="tab-content p-4">
                 <div class="flex items-center space-x-4 mb-8">
                     <div id="profile-photo" class="w-16 h-16 rounded-full bg-gradient-to-br from-soft-primary to-soft-secondary flex items-center justify-center overflow-hidden shadow-soft flex-shrink-0">
                         <i class="fas fa-user text-white text-3xl" id="profile-icon"></i>
-                    </div>
+                        </div>
                     <div>
                         <h2 class="text-lg font-semibold text-soft-dark leading-tight" id="profile-name">Пользователь</h2>
                         <p class="text-sm text-soft-gray leading-tight" id="profile-username">@username</p>
@@ -764,7 +528,7 @@
                     <div class="soft-card shadow-soft divide-y divide-gray-200 dark:divide-gray-700">
                         <div class="flex items-center justify-between p-4">
                             <div class="flex items-center">
-                                <i class="fas fa-moon text-soft-gray mr-2"></i>
+                                <i class="fas fa-moon text-soft-gray mr-3 w-4 text-center"></i>
                                 <span class="text-sm font-medium text-soft-dark">Темная тема</span>
                             </div>
                             <div>
@@ -774,7 +538,7 @@
                         </div>
                         <div class="flex items-center justify-between p-4">
                             <div class="flex items-center">
-                                <i class="fas fa-bell text-soft-gray mr-2"></i>
+                                <i class="fas fa-bell text-soft-gray mr-3 w-4 text-center"></i>
                                 <span class="text-sm font-medium text-soft-dark">Уведомления</span>
                             </div>
                             <div>
@@ -784,21 +548,19 @@
                         </div>
                         <div class="p-4">
                             <button id="logout-btn" class="soft-btn w-full bg-soft-danger text-white py-2 px-4 rounded-xl text-sm font-medium hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Выйти
+                                <i class="fas fa-sign-out-alt mr-2"></i> Выйти (Пример)
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <div class="text-center text-xs text-soft-gray mt-8">
-                    <p>Версия 1.0.0</p>
-                    <p class="mt-1">© 2023 Поиск Квартир</p>
+                    <p>Версия 1.1.0</p>
+                    <p class="mt-1">© 2023-2025 Поиск Квартир</p>
                 </div>
             </div>
-        </div>
-
-        <div class="bottom-nav">
-            <button class="tab-btn flex flex-col items-center text-soft-primary active" data-tab="home-tab">
+        </div> <div class="bottom-nav">
+            <button class="tab-btn flex flex-col items-center active" data-tab="home-tab">
                 <i class="fas fa-home"></i>
                 <span>Главная</span>
             </button>
@@ -811,14 +573,15 @@
                 <i class="fas fa-list"></i>
                 <span>Мои</span>
             </button>
+            <button class="tab-btn flex flex-col items-center" data-tab="favorites-tab">
+                 <i class="fas fa-heart"></i> <span>Избранное</span>
+             </button>
             <button class="tab-btn flex flex-col items-center" data-tab="profile-tab">
                 <i class="fas fa-user"></i>
                 <span>Профиль</span>
             </button>
         </div>
-    </div>
-
-    <div id="captcha-modal" class="captcha-modal">
+    </div> <div id="captcha-modal" class="captcha-modal">
         <div class="captcha-content soft-card shadow-soft-lg">
             <div class="flex justify-center mb-4">
                 <div class="w-16 h-16 bg-gradient-to-r from-soft-primary to-soft-secondary rounded-full flex items-center justify-center">
@@ -829,11 +592,10 @@
             <p class="text-soft-gray mb-4 text-sm">Введите код с картинки, чтобы продолжить поиск.</p>
             <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4 flex justify-center">
                 <div class="text-center">
-                    <div class="text-lg font-mono tracking-widest mb-2">3A7B9C</div>
-                    <div class="text-xs text-soft-gray">Введите этот код</div>
+                    <div class="text-lg font-mono tracking-widest mb-2">3A7B9C</div> <div class="text-xs text-soft-gray">Введите этот код</div>
                 </div>
             </div>
-            <input type="text" id="captcha-input" class="soft-input w-full p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm mb-4" placeholder="Введите код">
+            <input type="text" id="captcha-input" class="soft-input w-full p-3 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-soft-primary text-sm mb-4" placeholder="Введите код">
             <div class="flex space-x-3">
                 <button id="captcha-submit" class="soft-btn flex-1 bg-gradient-to-r from-soft-primary to-soft-secondary text-white py-2 px-4 rounded-xl font-medium hover:shadow-lg transition-all duration-300">
                     Подтвердить
@@ -845,192 +607,236 @@
         </div>
     </div>
 
-    <div id="listing-modal" class="listing-modal">
-        <div class="listing-content soft-card shadow-soft-lg">
-            <button id="listing-close" class="absolute top-2 right-2 text-soft-gray hover:text-soft-dark">
+    <div id="listing-overlay-modal" class="listing-overlay-modal fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[150] flex items-center justify-center p-4 hidden">
+       <div class="bg-white dark:bg-soft-dark w-full max-w-md rounded-xl shadow-soft-xl overflow-hidden animate-slide-up max-h-[90vh] flex flex-col">
+            <div id="listing-overlay-content" class="overflow-y-auto p-5 flex-grow">
+                <div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg mb-4 skeleton"></div>
+                 <div class="h-5 w-3/4 mb-2 rounded skeleton"></div>
+                 <div class="h-6 w-1/3 mb-3 rounded skeleton"></div>
+                 <div class="space-y-2 mb-4">
+                    <div class="h-3 w-full rounded skeleton"></div>
+                    <div class="h-3 w-5/6 rounded skeleton"></div>
+                    <div class="h-3 w-1/2 rounded skeleton"></div>
+                 </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                 <button id="listing-overlay-go-btn" class="soft-btn w-full bg-gradient-to-r from-soft-primary to-soft-secondary text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                     Перейти
+                 </button>
+             </div>
+            <button id="listing-overlay-close-btn" type="button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white bg-white/50 dark:bg-black/50 rounded-full w-8 h-8 flex items-center justify-center z-10">
                 <i class="fas fa-times"></i>
             </button>
-            <div id="listing-details"></div>
         </div>
     </div>
+
+    <div id="toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-[200] transition-opacity duration-300 opacity-0">
+        </div>
+
 
     <script>
         const tg = window.Telegram.WebApp;
         let userId = null;
         let captchaCode = null;
         let lastSearchFilters = null;
-        let cachedListings = { kufar: [], user: [] };
+        let cachedListings = { kufar: [], user: [] }; // Cache for listings shown in "New" tab
+        let userFavorites = []; // Array to store IDs of favorite listings
+        let allUserAdsCache = []; // Cache for user ads shown on home page
+        const MAX_USER_ADS_VISIBLE = 5;
+        let isScrolling = false; // Flag for keyboard dismissal logic
 
-        // Функция для вибрации
-        function triggerHapticFeedback(style = 'light') {
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Loaded");
+            tg.ready();
+            tg.expand();
+            // Set background color based on theme
+            document.body.style.backgroundColor = tg.themeParams.bg_color || '#f8fafc';
+            document.body.style.color = tg.themeParams.text_color || '#1e293b';
+
+            // Apply dark theme if needed
+            if (tg.colorScheme === 'dark') {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').checked = true;
+            } else {
+                 // Check local storage for theme override
+                 if (localStorage.getItem('theme') === 'dark') {
+                     document.body.classList.add('dark');
+                     document.getElementById('theme-toggle').checked = true;
+                 }
+            }
+
+            userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : Date.now(); // Fallback ID for testing
+            if (!tg.initDataUnsafe.user) {
+                 console.warn("User data not found in Telegram WebApp initData. Using fallback ID.");
+            }
+            console.log("User ID:", userId);
+
+            // Initial data loading
+            loadProfile();
+            loadUserAdsOnHome(); // Load user ads on home tab
+            loadNewListings();   // Load Kufar ads on new tab
+            loadUserListings();  // Load user's own ads on "My" tab
+            loadInitialFavorites(); // Load user's favorites
+
+            setupEventListeners();
+            startBackgroundParsing();
+
+            triggerHapticFeedback('soft'); // Initial soft vibration
+        });
+
+        // --- Haptic Feedback ---
+        function triggerHapticFeedback(style = 'soft') { // Default changed to 'soft'
+            // console.log("Haptic:", style); // Debugging
             if (tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred) {
                 try {
                     tg.HapticFeedback.impactOccurred(style);
                 } catch (e) {
-                    console.log('Haptic feedback error:', e);
+                    // console.error('Haptic feedback error:', e); // Use error for actual errors
                 }
             } else if ('vibrate' in navigator) {
-                const duration = style === 'light' ? 50 : style === 'medium' ? 100 : style === 'heavy' ? 150 : 50;
+                // Basic vibration fallback
+                const duration = style === 'soft' ? 40 : style === 'light' ? 50 : style === 'medium' ? 100 : style === 'heavy' ? 150 : 50;
                 navigator.vibrate(duration);
             }
         }
 
-        // Сохранение и загрузка кэша
-        function saveListingsCache() {
-            localStorage.setItem('cachedListings', JSON.stringify(cachedListings));
+        // --- Event Listeners Setup ---
+        function setupEventListeners() {
+            console.log("Setting up event listeners");
+            // Tab Navigation
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', handleTabClick);
+            });
+
+            // Theme Toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('change', handleThemeToggle);
+
+            // Search Button
+            const searchBtn = document.getElementById('search-btn');
+            if (searchBtn) searchBtn.addEventListener('click', handleSearchClick);
+
+            // Captcha Modal Buttons
+            const captchaSubmit = document.getElementById('captcha-submit');
+            if (captchaSubmit) captchaSubmit.addEventListener('click', handleCaptchaSubmit);
+            const captchaCancel = document.getElementById('captcha-cancel');
+            if (captchaCancel) captchaCancel.addEventListener('click', handleCaptchaCancel);
+
+             // Listing Overlay Modal Close Button
+             const listingOverlayCloseBtn = document.getElementById('listing-overlay-close-btn');
+             if (listingOverlayCloseBtn) listingOverlayCloseBtn.addEventListener('click', closeListingOverlay);
+             const listingOverlayModal = document.getElementById('listing-overlay-modal');
+             if (listingOverlayModal) listingOverlayModal.addEventListener('click', (event) => {
+                 // Close only if clicked on the background overlay itself
+                 if (event.target === listingOverlayModal) {
+                     closeListingOverlay();
+                 }
+             });
+
+            // "My" Tab Buttons & Form
+            const addListingBtn = document.getElementById('add-listing-btn');
+            if (addListingBtn) addListingBtn.addEventListener('click', showAddForm);
+
+            const userListingsContainer = document.getElementById('user-listings');
+            if (userListingsContainer) {
+                 // Listener for dynamically added "Add First" button
+                 userListingsContainer.addEventListener('click', (e) => {
+                     if (e.target && e.target.id === 'add-first-listing') {
+                         showAddForm();
+                     }
+                     // Delegate edit/delete clicks
+                     handleUserListingActions(e);
+                 });
+            }
+
+            const cancelBtn = document.getElementById('cancel-btn');
+            if (cancelBtn) cancelBtn.addEventListener('click', cancelAddEditForm);
+
+            const listingForm = document.getElementById('listing-form');
+            if (listingForm) listingForm.addEventListener('submit', handleListingFormSubmit);
+
+            // Image Upload Area
+            const imageUploadDiv = document.getElementById('image-upload');
+            const fileInput = document.getElementById('file-input');
+            if (imageUploadDiv && fileInput) {
+                imageUploadDiv.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', handleFileSelect);
+            }
+            // Image Preview Removal (Delegated)
+            const previewContainer = document.getElementById('preview-container');
+            if (previewContainer) {
+                previewContainer.addEventListener('click', handleImagePreviewRemove);
+            }
+
+            // Favorite Button Click (Delegated)
+            document.body.addEventListener('click', handleFavoriteButtonClick);
+
+            // Keyboard Handling
+            tg.onEvent('viewportChanged', handleViewportChange);
+            document.querySelectorAll('input, textarea, select').forEach(input => {
+                input.addEventListener('focus', handleInputFocus);
+            });
+            const contentWrapper = document.querySelector('.content-wrapper');
+            if (contentWrapper) {
+                 contentWrapper.addEventListener('scroll', handleScrollForKeyboard, { passive: true });
+            }
+             document.body.addEventListener('touchstart', handleTouchOutsideInput, { passive: true });
+
+             // Add haptics to common interactive elements
+             document.querySelectorAll('button, a, .image-upload, select').forEach(el => {
+                 // Avoid adding duplicate listeners if setupEventListeners is called multiple times
+                 if (!el.hasAttribute('data-haptic-listener')) {
+                     el.addEventListener('click', () => triggerHapticFeedback('light'));
+                     el.addEventListener('touchstart', () => triggerHapticFeedback('light'), { passive: true });
+                     el.setAttribute('data-haptic-listener', 'true');
+                 }
+             });
         }
 
-        function loadListingsCache() {
-            const saved = localStorage.getItem('cachedListings');
-            if (saved) {
-                cachedListings = JSON.parse(saved);
-                renderCachedListings();
-            }
-        }
+        // --- Event Handlers ---
 
-        // Отображение кэшированных объявлений
-        function renderCachedListings() {
-            const kufarContainer = document.getElementById('kufar-listings');
-            const userContainer = document.getElementById('user-new-listings');
-            kufarContainer.innerHTML = '';
-            userContainer.innerHTML = '';
-
-            if (cachedListings.kufar.length === 0) {
-                kufarContainer.innerHTML = `
-                    <div class="text-center py-10">
-                        <i class="fas fa-bell-slash text-soft-gray text-3xl mb-3"></i>
-                        <p class="text-sm text-soft-gray">Нет новых объявлений.</p>
-                    </div>
-                `;
-            } else {
-                cachedListings.kufar.forEach(ad => {
-                    kufarContainer.appendChild(createApartmentCard(ad));
-                });
-            }
-
-            if (cachedListings.user.length === 0) {
-                userContainer.innerHTML = `
-                    <div class="text-center py-10">
-                        <p class="text-sm text-soft-gray">Нет пользовательских объявлений</p>
-                    </div>
-                `;
-            } else {
-                cachedListings.user.forEach(ad => {
-                    ad.username = ad.username || 'неизвестно';
-                    userContainer.appendChild(createApartmentCard(ad, false, true));
-                });
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            tg.expand();
-            tg.ready();
-            // Добавляем попытку открыть во весь экран
-            try {
-                tg.requestFullscreen();
-            } catch (e) {
-                console.log('Ошибка при попытке открыть во весь экран:', e);
-            }
-        
+        function handleTabClick(event) {
+            const btn = event.currentTarget;
             triggerHapticFeedback('light');
-        
-            userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
-            if (!userId) {
-                alert('Не удалось определить пользователя. Пожалуйста, перезапустите приложение.');
-                return;
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'text-soft-primary')); // Remove color class too
+
+            const tabId = btn.getAttribute('data-tab');
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) tabContent.classList.add('active');
+
+            btn.classList.add('active');
+             // Re-apply primary color only to the active button, except for Favorites
+             if (tabId !== 'favorites-tab') {
+                btn.classList.add('text-soft-primary');
+             }
+
+            // Reset new badge when viewing "New" tab
+            if (tabId === 'new-tab') {
+                document.getElementById('new-badge')?.classList.add('hidden');
+                document.getElementById('nav-new-badge')?.classList.add('hidden');
             }
-        
-            // Загрузка кэша
-            loadListingsCache();
-        
-            // Инициализация
-            setTimeout(() => {
-                fetch('/api/register_user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        telegram_id: userId,
-                        username: tg.initDataUnsafe.user?.username,
-                        first_name: tg.initDataUnsafe.user?.first_name
-                    })
-                }).then(response => response.json()).then(data => {
-                    if (data.status === 'success') {
-                        loadProfile();
-                        loadPopular();
-                        loadUserListings();
-                        loadNewListings();
-                        startBackgroundParsing();
-                    }
-                }).catch(err => console.error('Ошибка регистрации:', err));
-            }, 1000);
-        
-            // Добавляем вибрацию на все интерактивные элементы
-            document.querySelectorAll('button, a, .image-upload, select, input[type="file"]').forEach(el => {
-                el.addEventListener('click', () => triggerHapticFeedback('light'));
-                el.addEventListener('touchstart', () => triggerHapticFeedback('light'));
-            });
-        });
+             // Load favorites when switching to the tab
+             if (tabId === 'favorites-tab') {
+                 loadFavoritesTab();
+             }
+        }
 
-        // Навигация по вкладкам
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                triggerHapticFeedback('light');
-                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-                document.querySelectorAll('.tab-btn').forEach(b => {
-                    b.classList.remove('text-soft-primary', 'active');
-                    b.querySelector('i').classList.remove('active');
-                });
-
-                const tabId = btn.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-                btn.classList.add('text-soft-primary', 'active');
-                btn.querySelector('i').classList.add('active');
-
-                if (tabId === 'new-tab') {
-                    document.getElementById('new-badge').classList.add('hidden');
-                    document.getElementById('nav-new-badge').classList.add('hidden');
-                }
-            });
-        });
-
-        // Темная тема
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('change', () => {
+        function handleThemeToggle() {
             triggerHapticFeedback('light');
             document.body.classList.toggle('dark');
-            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-        });
-
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark');
-            themeToggle.checked = true;
+            const currentTheme = document.body.classList.contains('dark') ? 'dark' : 'light';
+            localStorage.setItem('theme', currentTheme);
+             // Update Telegram theme if possible (might require specific setup)
+             // tg.setThemeParams({ bg_color: currentTheme === 'dark' ? '#1e293b' : '#f8fafc', ... });
+             // Update body background explicitly for consistency
+             document.body.style.backgroundColor = currentTheme === 'dark' ? '#1e293b' : '#f8fafc';
+             document.body.style.color = currentTheme === 'dark' ? '#f8fafc' : '#1e293b';
         }
 
-        // Загрузка профиля
-        function loadProfile() {
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('profile-name').textContent = user.first_name || 'Пользователь';
-            document.getElementById('profile-username').textContent = user.username ? `@${user.username}` : '@неизвестно';
-
-            if (user.photo_url) {
-                const img = document.createElement('img');
-                img.src = user.photo_url;
-                img.className = 'w-full h-full object-cover';
-                const photoDiv = document.getElementById('profile-photo');
-                photoDiv.innerHTML = '';
-                photoDiv.appendChild(img);
-            }
-
-            fetch(`/api/user_listings?telegram_id=${userId}`).then(res => res.json()).then(data => {
-                document.getElementById('profile-ad-count').textContent = data.ads.length;
-                document.getElementById('profile-fav-count').textContent = data.favorites || 0;
-                document.getElementById('profile-msg-count').textContent = data.messages || 0;
-            });
-        }
-
-        // Поиск
-        document.getElementById('search-btn').addEventListener('click', () => {
-            triggerHapticFeedback('light');
+        function handleSearchClick() {
+            triggerHapticFeedback('medium'); // Medium feedback for search action
 
             const minPrice = document.getElementById('min-price').value;
             const maxPrice = document.getElementById('max-price').value;
@@ -1039,6 +845,7 @@
 
             if (!city) {
                 showToast('Пожалуйста, выберите город');
+                triggerHapticFeedback('warning');
                 return;
             }
 
@@ -1049,460 +856,1309 @@
                 max_price: maxPrice ? parseInt(maxPrice) : null,
                 rooms: rooms || null
             };
-
             localStorage.setItem('lastSearchFilters', JSON.stringify(lastSearchFilters));
-
             performSearch(lastSearchFilters);
-        });
+        }
+
+        function handleCaptchaSubmit() {
+            triggerHapticFeedback('light');
+            const inputCode = document.getElementById('captcha-input').value.trim().toUpperCase();
+            if (!inputCode) {
+                showToast('Пожалуйста, введите код капчи');
+                triggerHapticFeedback('warning');
+                return;
+            }
+            if (inputCode !== captchaCode) { // Assuming captchaCode is set globally when modal shown
+                showToast('Неверный код капчи. Попробуйте еще раз.');
+                triggerHapticFeedback('error'); // Use error haptic
+                return;
+            }
+            document.getElementById('captcha-modal').classList.remove('active');
+            document.getElementById('captcha-input').value = '';
+            if (lastSearchFilters) {
+                 lastSearchFilters.captcha_code = captchaCode; // Use the correct captcha code
+                 performSearch(lastSearchFilters);
+            }
+            captchaCode = null;
+        }
+
+        function handleCaptchaCancel() {
+            triggerHapticFeedback('light');
+            document.getElementById('captcha-modal').classList.remove('active');
+            document.getElementById('captcha-input').value = '';
+            captchaCode = null;
+             // Enable search button again if it was disabled
+             const searchBtn = document.getElementById('search-btn');
+             if (searchBtn) searchBtn.disabled = false;
+        }
+
+        function showAddForm() {
+            triggerHapticFeedback('light');
+            const form = document.getElementById('listing-form');
+            const formTitle = document.getElementById('form-title');
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const addListingFormDiv = document.getElementById('add-listing-form');
+            const userListingsDiv = document.getElementById('user-listings');
+
+            if (!form || !addListingFormDiv || !userListingsDiv || !formTitle || !submitBtnText) return;
+
+            form.reset(); // Clear form fields
+            document.getElementById('preview-container').innerHTML = ''; // Clear image previews
+            form.removeAttribute('data-edit-id'); // Ensure no edit ID is present
+            form.ad_id.value = ''; // Clear hidden input too
+
+            formTitle.textContent = 'Новое объявление';
+            submitBtnText.textContent = 'Опубликовать';
+
+            addListingFormDiv.classList.remove('hidden');
+            userListingsDiv.classList.add('hidden');
+            addListingFormDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function cancelAddEditForm() {
+            triggerHapticFeedback('light');
+            const addListingFormDiv = document.getElementById('add-listing-form');
+            const userListingsDiv = document.getElementById('user-listings');
+            if (addListingFormDiv && userListingsDiv) {
+                 addListingFormDiv.classList.add('hidden');
+                 userListingsDiv.classList.remove('hidden');
+            }
+        }
+
+        function handleListingFormSubmit(e) {
+            e.preventDefault();
+            triggerHapticFeedback('medium'); // Medium feedback for form submission
+            const form = e.target;
+            const adIdToEdit = form.getAttribute('data-edit-id');
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const submitBtnTextSpan = document.getElementById('submit-btn-text'); // Get the span
+            const originalText = submitBtnTextSpan ? submitBtnTextSpan.textContent : (adIdToEdit ? 'Сохранить изменения' : 'Опубликовать'); // Use span content
+
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Сохранение...'; // Update full button content
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form); // Use FormData directly from the form
+            formData.append('telegram_id', userId);
+
+            // Check if new files were added
+            const files = document.getElementById('file-input').files;
+            // FormData already includes files if input name="photos" is set
+            // If you need specific handling or validation:
+            // if (files.length > 0) {
+            //     for (let i = 0; i < files.length; i++) {
+            //         formData.append('photos[]', files[i]); // Ensure name matches backend expectation
+            //     }
+            // } else if (adIdToEdit) {
+            //     // If editing and no new files, don't send empty 'photos[]'
+            //     formData.delete('photos'); // Assuming input name is 'photos'
+            // }
+
+
+            let apiUrl = '/api/add_listing'; // Replace with your actual API endpoint
+            if (adIdToEdit) {
+                apiUrl = '/api/update_listing'; // Replace with your actual API endpoint
+                formData.append('ad_id', adIdToEdit); // Add ad_id for update
+            }
+
+            // --- MOCK API CALL (Replace with actual fetch) ---
+            console.log("Submitting form data to:", apiUrl);
+            for (let [key, value] of formData.entries()) {
+                 console.log(key, value);
+            }
+            setTimeout(() => {
+                 const mockResponse = { status: 'success', ad_id: adIdToEdit || Date.now() }; // Simulate success
+                 // const mockResponse = { status: 'error', error: 'Validation failed' }; // Simulate error
+
+                 if (mockResponse.status === 'success') {
+                     showToast(adIdToEdit ? 'Объявление обновлено!' : 'Объявление отправлено на модерацию!', 'success');
+                     form.reset();
+                     document.getElementById('preview-container').innerHTML = '';
+                     form.removeAttribute('data-edit-id');
+                     cancelAddEditForm(); // Hide form, show list
+                     loadUserListings(); // Reload user's listings
+                     loadProfile(); // Update profile counts
+                     loadUserAdsOnHome(); // Update ads on home page if necessary
+                     triggerHapticFeedback('success'); // Success haptic
+                 } else {
+                     showToast(mockResponse.error || 'Ошибка при сохранении', 'error');
+                     triggerHapticFeedback('error'); // Error haptic
+                 }
+                 // Restore button text using the span
+                 submitBtn.innerHTML = `<i class="fas ${adIdToEdit ? 'fa-save' : 'fa-paper-plane'} mr-2"></i><span id="submit-btn-text">${originalText}</span>`;
+                 submitBtn.disabled = false;
+            }, 1500);
+            // --- END MOCK API CALL ---
+
+            /* --- START ACTUAL FETCH (Comment out MOCK above) ---
+            fetch(apiUrl, {
+                method: 'POST',
+                body: formData // FormData handles multipart/form-data automatically
+                // No 'Content-Type' header needed when using FormData with files
+            }).then(res => {
+                 if (!res.ok) { throw new Error(`HTTP error! status: ${res.status}`); }
+                 return res.json();
+             })
+             .then(data => {
+                if (data.status === 'success') {
+                    showToast(adIdToEdit ? 'Объявление обновлено!' : 'Объявление отправлено на модерацию!', 'success');
+                    form.reset();
+                    document.getElementById('preview-container').innerHTML = '';
+                    form.removeAttribute('data-edit-id');
+                    cancelAddEditForm(); // Hide form, show list
+                    loadUserListings(); // Reload user's listings
+                    loadProfile(); // Update profile counts
+                    loadUserAdsOnHome(); // Update ads on home page if necessary
+                    triggerHapticFeedback('success');
+                } else {
+                    showToast(data.error || 'Ошибка при сохранении', 'error');
+                    triggerHapticFeedback('error');
+                }
+            }).catch(err => {
+                console.error('Ошибка сохранения объявления:', err);
+                showToast('Произошла ошибка при сохранении', 'error');
+                triggerHapticFeedback('error');
+            }).finally(() => {
+                 submitBtn.innerHTML = `<i class="fas ${adIdToEdit ? 'fa-save' : 'fa-paper-plane'} mr-2"></i><span id="submit-btn-text">${originalText}</span>`;
+                 submitBtn.disabled = false;
+            });
+            --- END ACTUAL FETCH --- */
+        }
+
+        function handleFileSelect(event) {
+            const previewContainer = document.getElementById('preview-container');
+            const fileInput = event.target;
+            if (!previewContainer || !fileInput) return;
+
+            previewContainer.innerHTML = ''; // Clear previous previews
+            const files = fileInput.files;
+            const maxFiles = 5;
+            let currentFiles = Array.from(files); // Create mutable array
+
+            if (currentFiles.length > maxFiles) {
+                showToast(`Можно загрузить не более ${maxFiles} фотографий.`, 'warning');
+                triggerHapticFeedback('warning');
+                currentFiles = currentFiles.slice(0, maxFiles); // Keep only the first maxFiles
+
+                // Update the file input visually (difficult, requires creating a new FileList)
+                // Easiest is to inform the user and proceed with the allowed number
+                 showToast(`Выбрано ${files.length} фото. Будут загружены первые ${maxFiles}.`, 'info');
+            }
+
+            // Filter out non-image files
+            const imageFiles = currentFiles.filter(file => file.type.startsWith('image/'));
+             if (imageFiles.length !== currentFiles.length) {
+                 showToast('Некоторые выбранные файлы не являются изображениями и были пропущены.', 'info');
+             }
+
+             // Create DataTransfer to update the input's files (if needed, otherwise form sends original selection)
+             const dataTransfer = new DataTransfer();
+             imageFiles.forEach(file => dataTransfer.items.add(file));
+             fileInput.files = dataTransfer.files; // Update the input
+
+
+            if (imageFiles.length === 0) {
+                 previewContainer.innerHTML = '<p class="text-xs text-soft-gray w-full">Изображения не выбраны.</p>';
+                 return;
+            }
+
+
+            imageFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'preview-image w-16 h-16 rounded-lg overflow-hidden mr-2 mb-2 relative';
+                    imgContainer.innerHTML = `
+                        <img src="${e.target.result}" class="w-full h-full object-cover" alt="Preview ${index + 1}">
+                        <button type="button" class="remove-image text-xs" data-index="${index}" title="Удалить фото">&times;</button>
+                    `;
+                    previewContainer.appendChild(imgContainer);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function handleImagePreviewRemove(event) {
+             if (event.target.classList.contains('remove-image')) {
+                 triggerHapticFeedback('light');
+                 const indexToRemove = parseInt(event.target.getAttribute('data-index'), 10);
+                 const fileInput = document.getElementById('file-input');
+                 const previewContainer = document.getElementById('preview-container');
+
+                 if (isNaN(indexToRemove) || !fileInput || !previewContainer) return;
+
+                 // Remove the preview element
+                 event.target.closest('.preview-image').remove();
+
+                 // Remove the file from the input's FileList
+                 const currentFiles = Array.from(fileInput.files);
+                 currentFiles.splice(indexToRemove, 1); // Remove file at the specific index
+
+                 // Create a new DataTransfer object and add remaining files
+                 const dataTransfer = new DataTransfer();
+                 currentFiles.forEach(file => dataTransfer.items.add(file));
+
+                 // Assign the new FileList to the input
+                 fileInput.files = dataTransfer.files;
+
+                 // Re-render previews with correct indices if needed, or just remove
+                 // Simple approach: just remove the preview. User sees fewer previews.
+                 // If previews need correct indices after removal, re-run preview generation:
+                 // handleFileSelect({ target: fileInput }); // Re-run preview logic
+                 // OR update indices on remaining previews:
+                 previewContainer.querySelectorAll('.remove-image').forEach((btn, newIndex) => {
+                     btn.setAttribute('data-index', newIndex);
+                 });
+
+
+                 showToast('Фото удалено из списка для загрузки.', 'info');
+             }
+        }
+
+        function handleUserListingActions(event) {
+            const deleteButton = event.target.closest('.delete-btn');
+            const editButton = event.target.closest('.edit-btn');
+
+            if (deleteButton) {
+                triggerHapticFeedback('warning');
+                const adId = deleteButton.getAttribute('data-id');
+                if (!adId) return;
+
+                tg.showConfirm(`Вы уверены, что хотите удалить это объявление?`, (confirmed) => {
+                    if (confirmed) {
+                        triggerHapticFeedback('heavy');
+                        // --- MOCK API CALL ---
+                        console.log("Deleting ad:", adId);
+                        setTimeout(() => {
+                            showToast('Объявление удалено (симуляция)', 'success');
+                            deleteButton.closest('.apartment-card')?.remove();
+                            loadProfile(); // Update count
+                            // Check if list is empty now
+                            if (document.getElementById('user-listings').children.length === 0) {
+                                loadUserListings(); // Reload to show empty message
+                            }
+                        }, 1000);
+                        // --- END MOCK ---
+
+                        /* --- START ACTUAL FETCH ---
+                        fetch('/api/delete_listing', { // Replace with your actual API endpoint
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ telegram_id: userId, ad_id: adId })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                showToast('Объявление удалено', 'success');
+                                deleteButton.closest('.apartment-card')?.remove();
+                                loadProfile(); // Update count
+                                if (document.getElementById('user-listings').children.length === 0) {
+                                    loadUserListings(); // Reload to show empty message
+                                }
+                            } else {
+                                showToast(data.error || 'Ошибка удаления', 'error');
+                                triggerHapticFeedback('error');
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Ошибка удаления:", err);
+                            showToast('Сетевая ошибка при удалении', 'error');
+                            triggerHapticFeedback('error');
+                        });
+                        --- END ACTUAL FETCH --- */
+                    }
+                });
+
+            } else if (editButton) {
+                triggerHapticFeedback('light');
+                const adId = editButton.getAttribute('data-id');
+                if (!adId) return;
+
+                // --- MOCK API CALL ---
+                console.log("Editing ad:", adId);
+                 // Find ad data in cache (example)
+                 const adToEdit = allUserAdsCache.find(ad => ad.id == adId); // Use == for potential type difference
+                 if (adToEdit) {
+                     populateEditForm(adToEdit);
+                 } else {
+                      // Simulate fetching details if not in cache
+                      setTimeout(() => {
+                         const mockAdDetails = { id: adId, title: "Mock Title " + adId, description: "Mock desc", price: 555, rooms: "2", area: 50, city: "minsk", address: "Mock Address", images: [] };
+                         populateEditForm(mockAdDetails);
+                      }, 500);
+                 }
+                // --- END MOCK ---
+
+                /* --- START ACTUAL FETCH ---
+                fetch(`/api/get_listing_details?ad_id=${adId}&telegram_id=${userId}`) // Replace with your API
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.ad) {
+                        populateEditForm(data.ad);
+                    } else {
+                        showToast('Не удалось загрузить данные для редактирования', 'error');
+                        triggerHapticFeedback('error');
+                    }
+                })
+                .catch(err => {
+                    console.error("Ошибка загрузки для редактирования:", err);
+                    showToast('Сетевая ошибка при загрузке данных', 'error');
+                    triggerHapticFeedback('error');
+                });
+                --- END ACTUAL FETCH --- */
+            }
+        }
+
+        function handleFavoriteButtonClick(event) {
+            const favoriteButton = event.target.closest('.favorite-btn');
+            if (favoriteButton) {
+                event.stopPropagation(); // Prevent triggering card click/modal open
+                triggerHapticFeedback('light');
+                const adId = favoriteButton.getAttribute('data-id');
+                if (!adId) return;
+
+                const isCurrentlyFavorite = userFavorites.includes(adId);
+                const newState = !isCurrentlyFavorite;
+
+                // Optimistic UI Update
+                if (newState) {
+                    if (!userFavorites.includes(adId)) userFavorites.push(adId);
+                } else {
+                    userFavorites = userFavorites.filter(id => id !== adId);
+                }
+                updateFavoriteStatusUI(adId, newState);
+                updateProfileFavCount(); // Update count immediately
+
+                // --- MOCK API CALL ---
+                console.log("Toggling favorite:", adId, "New state:", newState);
+                setTimeout(() => {
+                     const mockSuccess = Math.random() > 0.1; // Simulate 90% success
+                     if (!mockSuccess) {
+                         console.error("Mock API failed for favorite toggle");
+                         showToast('Ошибка обновления избранного (симуляция)', 'error');
+                         // Rollback UI
+                         if (newState) { // If tried to add
+                             userFavorites = userFavorites.filter(id => id !== adId);
+                         } else { // If tried to remove
+                             if (!userFavorites.includes(adId)) userFavorites.push(adId);
+                         }
+                         updateFavoriteStatusUI(adId, !newState); // Revert UI
+                         updateProfileFavCount(); // Revert count
+                         triggerHapticFeedback('error');
+                     } else {
+                         console.log("Favorite toggle success (simulated)");
+                         // UI already updated optimistically
+                         loadFavoritesTab(); // Refresh favorites tab content
+                     }
+                }, 500);
+                // --- END MOCK ---
+
+                /* --- START ACTUAL FETCH ---
+                fetch('/api/toggle_favorite', { // Replace with your API endpoint
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id: userId, ad_id: adId, state: newState })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        showToast('Ошибка обновления избранного', 'error');
+                        // Rollback UI
+                        if (newState) { userFavorites = userFavorites.filter(id => id !== adId); }
+                        else { if (!userFavorites.includes(adId)) userFavorites.push(adId); }
+                        updateFavoriteStatusUI(adId, !newState);
+                        updateProfileFavCount();
+                        triggerHapticFeedback('error');
+                    } else {
+                        // Update favorite list from server response if provided
+                        if (data.currentFavorites) {
+                            userFavorites = data.currentFavorites;
+                        }
+                        updateProfileFavCount(); // Ensure count is accurate
+                        loadFavoritesTab(); // Refresh favorites tab
+                    }
+                })
+                .catch(err => {
+                    console.error("Ошибка toggle_favorite:", err);
+                    showToast('Ошибка сети при обновлении избранного', 'error');
+                    // Rollback UI
+                    if (newState) { userFavorites = userFavorites.filter(id => id !== adId); }
+                    else { if (!userFavorites.includes(adId)) userFavorites.push(adId); }
+                    updateFavoriteStatusUI(adId, !newState);
+                    updateProfileFavCount();
+                    triggerHapticFeedback('error');
+                });
+                --- END ACTUAL FETCH --- */
+            }
+        }
+
+        // --- Keyboard Handling ---
+        function handleViewportChange() {
+            // This event fires when the viewport size changes, e.g., keyboard appears/disappears
+            // We can use tg.viewportHeight and tg.viewportStableHeight
+             const isKeyboardVisible = tg.viewportHeight < tg.viewportStableHeight - 50; // Heuristic
+             // console.log("Viewport Changed. Keyboard visible:", isKeyboardVisible);
+             // Adjust layout if necessary, e.g., add padding to bottom of contentWrapper
+             const contentWrapper = document.querySelector('.content-wrapper');
+             if (contentWrapper) {
+                 // Example: Add padding when keyboard is potentially visible
+                 // contentWrapper.style.paddingBottom = isKeyboardVisible ? `${tg.viewportStableHeight - tg.viewportHeight + 100}px` : '100px';
+             }
+        }
+
+        function handleInputFocus(event) {
+            // Scroll the focused element into view after a short delay
+            const inputElement = event.target;
+            setTimeout(() => {
+                 // Check if element still has focus before scrolling
+                if (document.activeElement === inputElement) {
+                     inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                 }
+            }, 300); // Delay allows keyboard animation to start
+        }
+
+        function handleScrollForKeyboard() {
+            isScrolling = true;
+            const contentWrapper = document.querySelector('.content-wrapper');
+            if (contentWrapper) {
+                 clearTimeout(contentWrapper.scrollTimeout);
+                 contentWrapper.scrollTimeout = setTimeout(() => {
+                     isScrolling = false;
+                 }, 150);
+            }
+
+            const focusedElement = document.activeElement;
+            if (focusedElement && (focusedElement.tagName === 'INPUT' || focusedElement.tagName === 'TEXTAREA' || focusedElement.tagName === 'SELECT')) {
+                // console.log("Blurring input due to scroll"); // Debug
+                focusedElement.blur(); // Dismiss keyboard on scroll
+            }
+        }
+
+        function handleTouchOutsideInput(e) {
+            const focusedElement = document.activeElement;
+            if (focusedElement && !isScrolling &&
+                (focusedElement.tagName === 'INPUT' || focusedElement.tagName === 'TEXTAREA' || focusedElement.tagName === 'SELECT') &&
+                !focusedElement.contains(e.target) && // Touch not on the input itself
+                !e.target.closest('button, a, label, select, .remove-image, .preview-image, .tab-btn') // Touch not on other interactive elements
+            ) {
+                 // console.log("Blurring input due to touch outside"); // Debug
+                 focusedElement.blur();
+            }
+        }
+
+
+        // --- Data Loading Functions ---
+
+        function loadProfile() {
+            const user = tg.initDataUnsafe.user;
+            if (!user) {
+                 console.log("No user data for profile.");
+                 document.getElementById('profile-name').textContent = 'Гость';
+                 document.getElementById('profile-username').textContent = '';
+                 return;
+            };
+
+            document.getElementById('profile-name').textContent = user.first_name || 'Пользователь';
+            document.getElementById('profile-username').textContent = user.username ? `@${user.username}` : '';
+
+            const photoDiv = document.getElementById('profile-photo');
+            const icon = document.getElementById('profile-icon');
+            if (user.photo_url) {
+                const img = document.createElement('img');
+                img.src = user.photo_url;
+                img.className = 'w-full h-full object-cover';
+                img.alt = "User photo";
+                photoDiv.innerHTML = ''; // Clear icon
+                photoDiv.appendChild(img);
+            } else if (icon) {
+                 icon.style.display = 'block'; // Ensure icon is visible if no photo
+            }
+
+            // Fetch counts (mocked)
+            // Replace with actual API call: fetch(`/api/user_stats?telegram_id=${userId}`)
+             setTimeout(() => {
+                 document.getElementById('profile-ad-count').textContent = allUserAdsCache.length; // Use cached count
+                 document.getElementById('profile-fav-count').textContent = userFavorites.length; // Use favorite count
+                 document.getElementById('profile-msg-count').textContent = Math.floor(Math.random() * 5); // Mock messages
+             }, 300);
+        }
 
         function performSearch(searchData) {
             const searchBtn = document.getElementById('search-btn');
-            const originalText = searchBtn.innerHTML;
+            const resultsContainer = document.getElementById('results-container');
+            const searchResultsDiv = document.getElementById('search-results');
+            if (!searchBtn || !resultsContainer || !searchResultsDiv) return;
+
+            const originalText = '<i class="fas fa-search mr-2"></i> Найти квартиру'; // Store original HTML
             searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Поиск...';
             searchBtn.disabled = true;
+            resultsContainer.innerHTML = `<div class="text-center py-10"><div class="loading-spinner"></div></div>`; // Show loader
+            searchResultsDiv.classList.remove('hidden');
 
-            fetch('/api/search', {
+            // --- MOCK API CALL ---
+            console.log("Searching with data:", searchData);
+            setTimeout(() => {
+                 const needsCaptcha = Math.random() < 0.1; // 10% chance of captcha
+                 const hasError = Math.random() < 0.05; // 5% chance of error
+                 const foundAds = Math.random() > 0.2; // 80% chance of finding ads
+
+                 resultsContainer.innerHTML = ''; // Clear loader
+
+                 if (needsCaptcha && !searchData.captcha_code) {
+                     showCaptchaModal();
+                     searchBtn.innerHTML = originalText; // Restore button text
+                     // Don't disable button here, captcha modal handles it
+                     return; // Stop processing search
+                 }
+                 if (hasError) {
+                     showToast('Ошибка поиска (симуляция)', 'error');
+                     resultsContainer.innerHTML = createErrorStateHTML('Ошибка при выполнении поиска.');
+                     triggerHapticFeedback('error');
+                 } else if (!foundAds) {
+                     resultsContainer.innerHTML = createEmptyStateHTML('Ничего не найдено. Попробуйте изменить параметры поиска.');
+                 } else {
+                     // Generate mock ads
+                     const mockAds = Array.from({ length: Math.floor(Math.random() * 10) + 1 }, (_, i) => ({
+                         id: `search_${Date.now()}_${i}`,
+                         title: `Найденная ${searchData.rooms || '1'}-комн. квартира ${i + 1}`,
+                         price: (parseInt(searchData.min_price || 300)) + i * 50,
+                         description: `Описание для найденной квартиры в г. ${searchData.city}.`,
+                         address: `Улица Результатов ${i+1}, ${searchData.city}`,
+                         rooms: searchData.rooms || '1',
+                         area: 40 + i * 5,
+                         image: `https://placehold.co/600x400/a9a9a9/ffffff?text=Результат+${i+1}`,
+                         link: `https://example.com/search-result/${i+1}`,
+                         time_posted: formatDate(new Date(Date.now() - i * 3600000)), // Hours ago
+                         source: 'Поиск'
+                     }));
+                     mockAds.forEach(ad => {
+                         resultsContainer.appendChild(createApartmentCard(ad));
+                     });
+                     triggerHapticFeedback('success');
+                 }
+                 searchResultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                 searchBtn.disabled = false; // Re-enable button
+                 searchBtn.innerHTML = originalText; // Restore button text
+            }, 2000);
+            // --- END MOCK ---
+
+            /* --- START ACTUAL FETCH ---
+            fetch('/api/search', { // Replace with your API endpoint
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(searchData)
-            }).then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP ошибка: ${res.status}`);
-                }
+            })
+            .then(res => {
+                if (!res.ok) { throw new Error(`HTTP ошибка: ${res.status}`); }
                 return res.json();
-            }).then(data => {
-                const resultsContainer = document.getElementById('results-container');
-                resultsContainer.innerHTML = '';
-
+            })
+            .then(data => {
+                resultsContainer.innerHTML = ''; // Clear loader
                 if (data.error === 'CAPTCHA_REQUIRED') {
                     showCaptchaModal();
+                    // Keep button disabled until captcha is handled
                     return;
                 }
                 if (data.error) {
-                    showToast(data.error);
-                    resultsContainer.innerHTML = `
-                        <div class="text-center py-10">
-                            <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
-                            <p class="text-sm text-soft-gray">Ошибка: ${data.error}</p>
-                        </div>
-                    `;
+                    showToast(data.error, 'error');
+                    resultsContainer.innerHTML = createErrorStateHTML(data.error);
+                    triggerHapticFeedback('error');
                     return;
                 }
-
                 if (!data.ads || !Array.isArray(data.ads) || data.ads.length === 0) {
-                    resultsContainer.innerHTML = `
-                        <div class="text-center py-10">
-                            <i class="fas fa-search text-soft-gray text-3xl mb-3"></i>
-                            <p class="text-sm text-soft-gray">Ничего не найдено. Попробуйте изменить параметры поиска.</p>
-                        </div>
-                    `;
+                    resultsContainer.innerHTML = createEmptyStateHTML('Ничего не найдено. Попробуйте изменить параметры поиска.');
                 } else {
                     data.ads.forEach(ad => {
                         resultsContainer.appendChild(createApartmentCard(ad));
                     });
+                    triggerHapticFeedback('success');
                 }
-
-                document.getElementById('search-results').classList.remove('hidden');
-                document.getElementById('search-results').scrollIntoView({ behavior: 'smooth' });
-
-                triggerHapticFeedback('light');
-            }).catch(err => {
+                searchResultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            })
+            .catch(err => {
                 console.error('Ошибка поиска:', err);
-                showToast('Произошла ошибка при поиске');
-                document.getElementById('results-container').innerHTML = `
-                    <div class="text-center py-10">
-                        <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
-                        <p class="text-sm text-soft-gray">Ошибка при загрузке данных.</p>
-                    </div>
-                `;
-            }).finally(() => {
-                searchBtn.innerHTML = originalText;
-                searchBtn.disabled = false;
+                showToast('Произошла ошибка при поиске', 'error');
+                resultsContainer.innerHTML = createErrorStateHTML('Ошибка при загрузке данных.');
+                triggerHapticFeedback('error');
+            })
+            .finally(() => {
+                 // Re-enable button only if not waiting for captcha
+                 if (!document.getElementById('captcha-modal').classList.contains('active')) {
+                     searchBtn.innerHTML = originalText;
+                     searchBtn.disabled = false;
+                 }
             });
+            --- END ACTUAL FETCH --- */
         }
 
-        // Капча
-        function showCaptchaModal() {
-            const modal = document.getElementById('captcha-modal');
-            modal.classList.add('active');
+        function loadUserAdsOnHome() {
+            const container = document.getElementById('popular-container'); // Using the same container ID
+            const seeMoreBtnId = 'see-more-user-ads-btn';
+            if (!container) return;
 
-            captchaCode = '3A7B9C';
-            const captchaDisplay = modal.querySelector('.font-mono');
-            if (captchaDisplay) {
-                captchaDisplay.textContent = captchaCode;
-            }
-        }
+            // Remove old "See More" button if exists
+            document.getElementById(seeMoreBtnId)?.remove();
+            container.innerHTML = createLoadingStateHTML(2); // Show skeleton loader
 
-        document.getElementById('captcha-submit').addEventListener('click', () => {
-            triggerHapticFeedback('light');
-
-            const inputCode = document.getElementById('captcha-input').value.trim().toUpperCase();
-            if (!inputCode) {
-                showToast('Пожалуйста, введите код капчи');
-                return;
-            }
-
-            if (inputCode !== captchaCode) {
-                showToast('Неверный код капчи. Попробуйте еще раз.');
-                return;
-            }
-
-            document.getElementById('captcha-modal').classList.remove('active');
-            document.getElementById('captcha-input').value = '';
-            lastSearchFilters.captcha_code = captchaCode;
-            performSearch(lastSearchFilters);
-            captchaCode = null;
-        });
-
-        document.getElementById('captcha-cancel').addEventListener('click', () => {
-            triggerHapticFeedback('light');
-            document.getElementById('captcha-modal').classList.remove('active');
-            document.getElementById('captcha-input').value = '';
-            captchaCode = null;
-        });
-
-        // Популярные объявления
-        function loadPopular() {
-            const container = document.getElementById('popular-container');
-
+            // --- MOCK API CALL ---
+            console.log("Loading user ads for home page");
             setTimeout(() => {
-                fetch('/api/ads').then(res => res.json()).then(data => {
-                    container.innerHTML = '';
-                    if (!data.ads || data.ads.length === 0) {
-                        container.innerHTML = `
-                            <div class="text-center py-10">
-                                <i class="fas fa-home text-soft-gray text-3xl mb-3"></i>
-                                <p class="text-sm text-soft-gray">Нет популярных объявлений.</p>
-                            </div>
-                        `;
-                    } else {
-                        data.ads.forEach(ad => {
-                            container.appendChild(createApartmentCard(ad));
-                        });
-                    }
-                }).catch(err => {
-                    console.error('Ошибка загрузки популярных:', err);
-                    container.innerHTML = `
-                        <div class="text-center py-10">
-                            <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
-                            <p class="text-sm text-soft-gray">Ошибка загрузки данных.</p>
-                        </div>
-                    `;
-                });
+                 // Generate more mock ads for home page
+                 allUserAdsCache = Array.from({ length: Math.floor(Math.random() * 8) + 3 }, (_, i) => ({ // 3 to 10 ads
+                     id: `user_${Date.now()}_${i}`,
+                     telegram_id: `mock_user_${i}`, // Mock telegram ID
+                     username: `user${i}`, // Mock username
+                     title: `Объявление пользователя ${i + 1}`,
+                     price: 400 + i * 25,
+                     description: `Это тестовое объявление от пользователя ${i + 1}. Сдается хорошая квартира.`,
+                     address: `Улица Пользователей ${i+1}, Минск`,
+                     rooms: `${(i % 3) + 1}`,
+                     area: 45 + i * 3,
+                     image: `https://placehold.co/600x400/cccccc/ffffff?text=User+Ad+${i+1}`,
+                     link: null, // User ads might not have external links initially
+                     time_posted: formatDate(new Date(Date.now() - i * 86400000)), // Days ago
+                     source: 'user' // Indicate source
+                 }));
+                 allUserAdsCache.sort((a, b) => new Date(b.time_posted) - new Date(a.time_posted)); // Sort newest first (example)
+
+                 renderUserAdsOnHome(allUserAdsCache); // Render the fetched ads
+                 loadProfile(); // Update profile count based on fetched ads
             }, 1500);
+            // --- END MOCK ---
+
+            /* --- START ACTUAL FETCH ---
+            fetch('/api/all_user_listings?sort=newest') // Replace with your API
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && Array.isArray(data.ads)) {
+                        allUserAdsCache = data.ads; // Store in cache
+                        renderUserAdsOnHome(allUserAdsCache);
+                        loadProfile(); // Update profile count
+                    } else {
+                        container.innerHTML = createEmptyStateHTML('Пока нет объявлений от пользователей.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Ошибка загрузки объявлений пользователей:', err);
+                    container.innerHTML = createErrorStateHTML('Ошибка загрузки данных.');
+                });
+            --- END ACTUAL FETCH --- */
         }
 
-        // Новые объявления
+        function renderUserAdsOnHome(ads) {
+             const container = document.getElementById('popular-container');
+             const seeMoreBtnId = 'see-more-user-ads-btn';
+             if (!container) return;
+
+             container.innerHTML = ''; // Clear loader/previous content
+             document.getElementById(seeMoreBtnId)?.remove(); // Remove old button
+
+             if (!ads || ads.length === 0) {
+                 container.innerHTML = createEmptyStateHTML('Пока нет объявлений от пользователей.');
+                 return;
+             }
+
+             ads.forEach((ad, index) => {
+                 // Pass false for isUserListing (not in "My" tab), true for isNewUserListing (to show contact)
+                 const card = createApartmentCard(ad, false, true);
+                 if (index >= MAX_USER_ADS_VISIBLE) {
+                     card.classList.add('hidden', 'extra-user-ad'); // Hide extra ads
+                 }
+                 container.appendChild(card);
+             });
+
+             if (ads.length > MAX_USER_ADS_VISIBLE) {
+                 const seeMoreBtn = document.createElement('button');
+                 seeMoreBtn.id = seeMoreBtnId;
+                 seeMoreBtn.className = 'soft-btn mt-4 w-full bg-gray-200 dark:bg-gray-600 text-soft-dark py-2 px-4 rounded-xl text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-all duration-300';
+                 seeMoreBtn.textContent = 'Посмотреть еще';
+                 seeMoreBtn.onclick = () => {
+                     triggerHapticFeedback('light');
+                     container.querySelectorAll('.extra-user-ad').forEach(card => {
+                         card.classList.remove('hidden');
+                     });
+                     seeMoreBtn.remove(); // Remove button after click
+                 };
+                 // Insert button *after* the container
+                 container.parentNode.insertBefore(seeMoreBtn, container.nextSibling);
+             }
+        }
+
         function loadNewListings() {
             const kufarContainer = document.getElementById('kufar-listings');
-            const userContainer = document.getElementById('user-new-listings');
+            if (!kufarContainer) return;
 
+            kufarContainer.innerHTML = createLoadingStateHTML(1); // Show loader
+
+            // --- MOCK API CALL ---
+            console.log("Loading new listings (Kufar example)");
             setTimeout(() => {
-                fetch(`/api/new_listings?telegram_id=${userId}`).then(res => res.json()).then(data => {
-                    kufarContainer.innerHTML = '';
-                    cachedListings.kufar = data.ads || [];
-                    saveListingsCache();
+                 // Generate mock Kufar ads
+                 const mockKufarAds = Array.from({ length: Math.floor(Math.random() * 4) + 1 }, (_, i) => ({ // 1 to 4 ads
+                     id: `kufar_${Date.now()}_${i}`,
+                     title: `Новая квартира с Kufar ${i + 1}`,
+                     price: 600 + i * 50,
+                     description: `Свежее объявление, найденное на Kufar. ${i + 1} комната.`,
+                     address: `Где-то в Минске ${i+1}`,
+                     rooms: `${i + 1}`,
+                     area: 55 + i * 2,
+                     image: `https://placehold.co/600x400/90ee90/ffffff?text=Kufar+${i+1}`,
+                     link: `https://example.com/kufar/${i+1}`,
+                     time_posted: formatDate(new Date(Date.now() - i * 1800000)), // Minutes/Hours ago
+                     source: 'Kufar'
+                 }));
+                 cachedListings.kufar = mockKufarAds; // Update cache
+                 renderNewListings(cachedListings.kufar); // Render
+                 updateNewBadges(cachedListings.kufar.length); // Update badges
+            }, 1200);
+            // --- END MOCK ---
 
-                    if (!data.ads || data.ads.length === 0) {
-                        kufarContainer.innerHTML = `
-                            <div class="text-center py-10">
-                                <i class="fas fa-bell-slash text-soft-gray text-3xl mb-3"></i>
-                                <p class="text-sm text-soft-gray">Нет новых объявлений.</p>
-                            </div>
-                        `;
+            /* --- START ACTUAL FETCH ---
+            fetch(`/api/new_listings?telegram_id=${userId}&source=kufar`) // Example: specify source
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && Array.isArray(data.ads)) {
+                        cachedListings.kufar = data.ads; // Update cache
+                        renderNewListings(cachedListings.kufar);
+                        updateNewBadges(cachedListings.kufar.length);
                     } else {
-                        data.ads.forEach(ad => {
-                            kufarContainer.appendChild(createApartmentCard(ad));
-                        });
-
-                        document.getElementById('new-badge').textContent = data.ads.length + (cachedListings.user.length || 0);
-                        document.getElementById('nav-new-badge').textContent = data.ads.length + (cachedListings.user.length || 0);
-                        document.getElementById('new-badge').classList.remove('hidden');
-                        document.getElementById('nav-new-badge').classList.remove('hidden');
-
-                        triggerHapticFeedback('light');
+                         renderNewListings([]); // Render empty state
+                         updateNewBadges(0);
                     }
-
-                    // Загрузка пользовательских объявлений
-                    fetch(`/api/all_user_listings`).then(res => res.json()).then(userData => {
-                        userContainer.innerHTML = '';
-                        cachedListings.user = userData.ads || [];
-                        saveListingsCache();
-
-                        if (!userData.ads || userData.ads.length === 0) {
-                            userContainer.innerHTML = `
-                                <div class="text-center py-10">
-                                    <p class="text-sm text-soft-gray">Нет пользовательских объявлений</p>
-                                </div>
-                            `;
-                        } else {
-                            userData.ads.forEach(ad => {
-                                ad.username = ad.username || 'неизвестно';
-                                userContainer.appendChild(createApartmentCard(ad, false, true));
-                            });
-                        }
-                    });
-                }).catch(err => {
-                    console.error('Ошибка загрузки новых:', err);
-                    kufarContainer.innerHTML = `
-                        <div class="text-center py-10">
-                            <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
-                            <p class="text-sm text-soft-gray">Ошибка загрузки данных.</p>
-                        </div>
-                    `;
+                })
+                .catch(err => {
+                    console.error('Ошибка загрузки новых объявлений:', err);
+                    kufarContainer.innerHTML = createErrorStateHTML('Ошибка загрузки данных.');
+                    updateNewBadges(0);
                 });
-            }, 1000);
+            --- END ACTUAL FETCH --- */
         }
 
-        // Пользовательские объявления
+        function renderNewListings(ads) {
+             const kufarContainer = document.getElementById('kufar-listings');
+             if (!kufarContainer) return;
+             kufarContainer.innerHTML = ''; // Clear loader/previous
+
+             if (!ads || ads.length === 0) {
+                 kufarContainer.innerHTML = createEmptyStateHTML('Нет новых объявлений с Kufar.');
+             } else {
+                 ads.forEach(ad => {
+                     // Pass false for both flags (not user's own, not for contact button)
+                     kufarContainer.appendChild(createApartmentCard(ad, false, false));
+                 });
+             }
+        }
+
+        function updateNewBadges(count) {
+             const newBadge = document.getElementById('new-badge');
+             const navNewBadge = document.getElementById('nav-new-badge');
+             if (!newBadge || !navNewBadge) return;
+
+             if (count > 0) {
+                 newBadge.textContent = count;
+                 navNewBadge.textContent = count;
+                 newBadge.classList.remove('hidden');
+                 navNewBadge.classList.remove('hidden');
+                 // Optional: Trigger haptic only if count increased?
+                 // triggerHapticFeedback('light');
+             } else {
+                 newBadge.classList.add('hidden');
+                 navNewBadge.classList.add('hidden');
+             }
+        }
+
         function loadUserListings() {
             const container = document.getElementById('user-listings');
+            if (!container) return;
+            container.innerHTML = createLoadingStateHTML(1); // Show loader
 
-            setTimeout(() => {
-                fetch(`/api/user_listings?telegram_id=${userId}`).then(res => res.json()).then(data => {
-                    container.innerHTML = '';
-                    if (!data.ads || data.ads.length === 0) {
-                        container.innerHTML = `
-                            <div class="text-center py-10">
-                                <i class="fas fa-home text-soft-gray text-3xl mb-3"></i>
-                                <p class="text-sm text-soft-gray">У вас пока нет объявлений</p>
-                                <button id="add-first-listing" class="soft-btn mt-4 bg-gradient-to-r from-soft-primary to-soft-secondary text-white py-2 px-6 rounded-xl text-sm font-medium">
-                                    Добавить первое объявление
-                                </button>
-                            </div>
-                        `;
+             // --- MOCK API CALL ---
+             console.log("Loading user's own listings for 'My' tab");
+             // Use the same cache as the home page for consistency in this mock
+             const userOwnAds = allUserAdsCache; // In real app, fetch specifically for the user
+             setTimeout(() => {
+                 renderUserOwnListings(userOwnAds);
+             }, 800);
+             // --- END MOCK ---
 
-                        document.getElementById('add-first-listing').addEventListener('click', () => {
-                            triggerHapticFeedback('light');
-                            document.getElementById('add-listing-form').classList.remove('hidden');
-                            document.getElementById('user-listings').classList.add('hidden');
-                        });
+            /* --- START ACTUAL FETCH ---
+            fetch(`/api/user_listings?telegram_id=${userId}`) // Replace with your API
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && Array.isArray(data.ads)) {
+                        // Optionally update allUserAdsCache if this is the definitive source
+                        // allUserAdsCache = data.ads;
+                        renderUserOwnListings(data.ads);
                     } else {
-                        data.ads.forEach(ad => {
-                            container.appendChild(createApartmentCard(ad, true));
-                        });
+                         renderUserOwnListings([]); // Render empty state
                     }
-                }).catch(err => {
-                    console.error('Ошибка загрузки пользовательских:', err);
-                    container.innerHTML = `
-                        <div class="text-center py-10">
-                            <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
-                            <p class="text-sm text-soft-gray">Ошибка загрузки данных.</p>
-                        </div>
-                    `;
+                })
+                .catch(err => {
+                    console.error('Ошибка загрузки пользовательских объявлений:', err);
+                    container.innerHTML = createErrorStateHTML('Ошибка загрузки ваших объявлений.');
                 });
-            }, 800);
+            --- END ACTUAL FETCH --- */
         }
 
-        // Создание карточки объявления
-        function createApartmentCard(ad, isUserListing = false, isNewUserListing = false) {
+        function renderUserOwnListings(ads) {
+             const container = document.getElementById('user-listings');
+             if (!container) return;
+             container.innerHTML = ''; // Clear loader/previous
+
+             if (!ads || ads.length === 0) {
+                 container.innerHTML = `
+                     <div class="text-center py-10">
+                         <i class="fas fa-home text-soft-gray text-3xl mb-3"></i>
+                         <p class="text-sm text-soft-gray">У вас пока нет объявлений</p>
+                         <button id="add-first-listing" class="soft-btn mt-4 bg-gradient-to-r from-soft-primary to-soft-secondary text-white py-2 px-6 rounded-xl text-sm font-medium">
+                             Добавить первое объявление
+                         </button>
+                     </div>
+                 `;
+                 // Note: Event listener for add-first-listing is handled by delegation in setupEventListeners
+             } else {
+                 ads.forEach(ad => {
+                     // Pass true for isUserListing (to show edit/delete), false for isNewUserListing
+                     container.appendChild(createApartmentCard(ad, true, false));
+                 });
+             }
+        }
+
+        function loadInitialFavorites() {
+             // --- MOCK API CALL ---
+             console.log("Loading initial favorites");
+             setTimeout(() => {
+                 // Simulate having a few favorites initially
+                 userFavorites = allUserAdsCache.slice(0, Math.floor(Math.random() * 3)).map(ad => ad.id); // Favorite 0 to 2 ads from cache
+                 console.log("Initial favorites loaded (mock):", userFavorites);
+                 updateProfileFavCount();
+                 // Update heart icons on already rendered cards
+                 userFavorites.forEach(favId => updateFavoriteStatusUI(favId, true));
+                 // Don't load favorites tab content yet, wait for user to click
+             }, 500);
+             // --- END MOCK ---
+
+            /* --- START ACTUAL FETCH ---
+            fetch(`/api/get_favorites?telegram_id=${userId}`) // Replace with your API
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && Array.isArray(data.favorites)) {
+                        userFavorites = data.favorites;
+                        updateProfileFavCount();
+                        // Update heart icons on already rendered cards
+                        userFavorites.forEach(favId => updateFavoriteStatusUI(favId, true));
+                    } else {
+                         console.warn("Could not load favorites or none found.");
+                         userFavorites = [];
+                         updateProfileFavCount();
+                    }
+                })
+                .catch(err => {
+                    console.error("Ошибка загрузки избранного:", err);
+                    userFavorites = [];
+                    updateProfileFavCount();
+                });
+             --- END ACTUAL FETCH --- */
+        }
+
+        function loadFavoritesTab() {
+             const container = document.getElementById('favorites-container');
+             if (!container) return;
+             container.innerHTML = createLoadingStateHTML(2); // Show loader
+
+             if (userFavorites.length === 0) {
+                 container.innerHTML = createEmptyStateHTML('Вы пока ничего не добавили в избранное.', 'fa-heart-broken');
+                 return;
+             }
+
+             // --- MOCK LOGIC ---
+             // Find favorite ads in the combined cache (kufar + user)
+             console.log("Loading favorites tab content for IDs:", userFavorites);
+             setTimeout(() => {
+                 const favoriteAdsData = [...cachedListings.kufar, ...allUserAdsCache]
+                                         .filter(ad => userFavorites.includes(ad.id)); // Use includes for comparison
+
+                 container.innerHTML = ''; // Clear loader
+                 if (favoriteAdsData.length > 0) {
+                     favoriteAdsData.forEach(ad => {
+                         // Determine flags based on ad source
+                         const isUserListing = ad.source === 'user'; // Example check
+                         const card = createApartmentCard(ad, isUserListing, isUserListing); // Pass flags
+                         container.appendChild(card);
+                     });
+                     // Ensure hearts are filled
+                     userFavorites.forEach(favId => updateFavoriteStatusUI(favId, true));
+                 } else {
+                      container.innerHTML = createEmptyStateHTML('Не удалось загрузить данные избранных объявлений.', 'fa-sync-alt'); // Different icon
+                 }
+             }, 1000);
+             // --- END MOCK ---
+
+             /* --- START ACTUAL FETCH ---
+             // Fetch full ad details for favorite IDs
+             fetch(`/api/get_listings_by_ids?ids=${userFavorites.join(',')}`) // Replace with your API
+                 .then(res => res.json())
+                 .then(data => {
+                     container.innerHTML = ''; // Clear loader
+                     if (data.status === 'success' && Array.isArray(data.ads) && data.ads.length > 0) {
+                         data.ads.forEach(ad => {
+                             const isUserListing = ad.source === 'user'; // Check source from fetched data
+                             container.appendChild(createApartmentCard(ad, isUserListing, isUserListing));
+                         });
+                         // Ensure hearts are filled after rendering
+                         userFavorites.forEach(favId => updateFavoriteStatusUI(favId, true));
+                     } else {
+                         container.innerHTML = createEmptyStateHTML('Не удалось загрузить данные избранных объявлений.', 'fa-sync-alt');
+                     }
+                 })
+                 .catch(err => {
+                     console.error("Ошибка загрузки деталей избранного:", err);
+                     container.innerHTML = createErrorStateHTML('Ошибка при загрузке избранных.');
+                 });
+             --- END ACTUAL FETCH --- */
+        }
+
+
+        // --- UI Creation Functions ---
+
+        function createApartmentCard(ad, isUserListing = false, isForContact = false) {
             const card = document.createElement('div');
+            // Add data-id attribute to the card itself
+            card.setAttribute('data-id', ad.id || '');
             card.className = 'apartment-card soft-card shadow-soft hover:shadow-soft-lg transition-all duration-300';
 
             const formattedPrice = new Intl.NumberFormat('ru-RU').format(ad.price || 0);
-            const title = ad.title || `Квартира в ${ad.city || 'неизвестно'}`;
+            const title = ad.title; // Use title directly, no fallback like "Квартира в..."
             const description = ad.description || 'Описание не указано';
-            const timePosted = ad.time_posted || formatDate(ad.date || new Date());
+            const timePosted = ad.time_posted || (ad.date ? formatDate(ad.date) : 'Недавно');
+            const isFavorited = userFavorites.includes(ad.id); // Check if favorited
 
             card.innerHTML = `
                 <div class="relative">
-                    ${ad.image ? `<img src="${ad.image}" alt="${title}" class="w-full h-48 object-cover rounded-t-lg">` : 
+                    ${ad.image ? `<img src="${ad.image}" alt="${title || 'Фото квартиры'}" class="w-full h-48 object-cover rounded-t-lg" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e0e0e0/ffffff?text=Нет+Фото';">` :
                     `<div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-lg">
                         <i class="fas fa-image text-soft-gray text-3xl"></i>
                     </div>`}
-                    <div class="price-tag">$${formattedPrice}/мес</div>
-                    ${ad.source ? `<div class="absolute top-3 left-3 bg-soft-primary text-white text-xs font-semibold px-2 py-1 rounded-lg">
+                    <div class="price-tag">$${formattedPrice}</div> ${ad.source && ad.source !== 'user' ? `<div class="absolute top-3 left-3 bg-soft-primary text-white text-xs font-semibold px-2 py-1 rounded-lg shadow">
                         ${ad.source}
                     </div>` : ''}
                 </div>
                 <div class="p-4">
-                    <h4 class="text-base font-semibold text-soft-dark mb-2">${title}</h4>
-                    <p class="text-sm text-soft-gray mb-2 line-clamp-2">${description}</p>
+                    ${title ? `<h4 class="text-base font-semibold text-soft-dark dark:text-soft-light mb-2 truncate" title="${title}">${title}</h4>` : ''} <p class="text-sm text-soft-gray mb-2 line-clamp-2">${description}</p>
                     ${ad.address ? `<p class="text-sm text-soft-gray mb-3 flex items-center">
                         <i class="fas fa-map-marker-alt text-xs mr-1"></i>
                         <span class="truncate">${ad.address}</span>
                     </p>` : ''}
-                    
+
                     <div class="flex flex-wrap mb-3">
                         ${ad.rooms ? `<span class="feature-badge"><i class="fas fa-door-open mr-1"></i>${ad.rooms} ${ad.rooms === 'studio' ? 'студия' : 'комн.'}</span>` : ''}
                         ${ad.area ? `<span class="feature-badge"><i class="fas fa-ruler-combined mr-1"></i>${ad.area} м²</span>` : ''}
                         ${ad.floor ? `<span class="feature-badge"><i class="fas fa-building mr-1"></i>${ad.floor}</span>` : ''}
                     </div>
-                    
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="text-sm text-soft-gray">
+
+                    <div class="flex items-center justify-between mb-3 text-xs text-soft-gray">
+                        <div>
                             <i class="fas fa-clock mr-1"></i>
                             ${timePosted}
                         </div>
-                        ${isUserListing ? `
-                        <div class="flex space-x-2">
-                            <button class="edit-btn text-soft-primary bg-soft-primary bg-opacity-10 p-2 rounded-lg hover:bg-opacity-20 transition-all">
-                                <i class="fas fa-edit text-xs"></i>
-                            </button>
-                            <button class="delete-btn text-soft-danger bg-soft-danger bg-opacity-10 p-2 rounded-lg hover:bg-opacity-20 transition-all">
-                                <i class="fas fa-trash text-xs"></i>
-                            </button>
-                        </div>
-                        ` : ''}
+                         ${isUserListing ? ` <div class="flex space-x-1">
+                             <button class="edit-btn text-soft-primary hover:text-indigo-700 p-1" data-id="${ad.id}" title="Редактировать">
+                                 <i class="fas fa-edit text-sm pointer-events-none"></i>
+                             </button>
+                             <button class="delete-btn text-soft-danger hover:text-red-700 p-1" data-id="${ad.id}" title="Удалить">
+                                 <i class="fas fa-trash text-sm pointer-events-none"></i>
+                             </button>
+                         </div>
+                         ` : ''}
                     </div>
-                    
-                    <div class="flex justify-between items-center">
-                        ${ad.link ? `
-                        <a href="${ad.link}" target="_blank" class="soft-btn oval-btn bg-soft-primary text-white">
-                            <i class="fas fa-eye mr-1"></i> Перейти
-                        </a>
-                        ` : ''}
-                        ${isNewUserListing && ad.telegram_id ? `
-                        <a href="tg://user?id=${ad.telegram_id}" class="soft-btn oval-btn bg-soft-secondary text-white">
-                            <i class="fas fa-comment mr-1"></i> Написать @${ad.username || 'неизвестно'}
-                        </a>
-                        ` : ''}
-                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                         <div class="text-xs text-soft-gray truncate mr-2">
+                              ${isForContact ? `<span>От: @${ad.username || 'пользователь'}</span>` : (ad.source ? `<span>Источник: ${ad.source}</span>` : '')}
+                         </div>
+                         <div class="flex items-center space-x-2 flex-shrink-0">
+                             ${isForContact && ad.telegram_id ? `
+                                 <a href="tg://user?id=${ad.telegram_id}" class="soft-btn oval-btn bg-soft-secondary text-white !px-3 !py-1 text-xs" onclick="event.stopPropagation(); triggerHapticFeedback('light');" title="Написать пользователю">
+                                     <i class="fas fa-comment mr-1"></i> Связаться
+                                 </a>
+                             ` : ''}
+                             ${ad.link ? `
+                                 <a href="${ad.link}" target="_blank" class="soft-btn oval-btn bg-soft-primary text-white !px-3 !py-1 text-xs" onclick="event.stopPropagation(); triggerHapticFeedback('light');" title="Перейти на сайт объявления">
+                                     <i class="fas fa-external-link-alt mr-1"></i> Перейти
+                                 </a>
+                             ` : ''}
+                             <button class="favorite-btn text-gray-400 hover:text-red-500 p-1 ${isFavorited ? 'favorited' : ''}" data-id="${ad.id}" title="В избранное">
+                                 <i class="${isFavorited ? 'fas' : 'far'} fa-heart text-base pointer-events-none"></i>
+                             </button>
+                         </div>
+                     </div>
                 </div>
             `;
 
-            // Обработчик клика для открытия модального окна
+            // Add click listener to the card itself to open the overlay modal
             card.addEventListener('click', (e) => {
+                // Open overlay only if the click was not on a button or link inside the card
                 if (!e.target.closest('button, a')) {
-                    triggerHapticFeedback('light');
-                    showListingModal(ad);
+                    showListingOverlay(ad);
                 }
             });
 
             return card;
         }
 
-        // Модальное окно объявления
-        function showListingModal(ad) {
-            const modal = document.getElementById('listing-modal');
-            const details = document.getElementById('listing-details');
+        function showListingOverlay(ad) {
+            const modal = document.getElementById('listing-overlay-modal');
+            const content = document.getElementById('listing-overlay-content');
+            const goBtn = document.getElementById('listing-overlay-go-btn');
+
+            if (!modal || !content || !goBtn) return;
+
+            triggerHapticFeedback('medium'); // Haptic feedback for opening
+
+            // --- Populate Modal Content ---
             const formattedPrice = new Intl.NumberFormat('ru-RU').format(ad.price || 0);
-            const title = ad.title || `Квартира в ${ad.city || 'неизвестно'}`;
-            const description = ad.description || 'Описание не указано';
-            const timePosted = ad.time_posted || formatDate(ad.date || new Date());
+            const title = ad.title; // No fallback
+            const description = ad.description || 'Описание не указано.';
+            const timePosted = ad.time_posted || (ad.date ? formatDate(ad.date) : 'Недавно');
 
-            details.innerHTML = `
-                <h3 class="text-lg font-semibold text-soft-dark mb-2">${title}</h3>
-                <p class="text-sm text-soft-gray mb-3">${description}</p>
-                <p class="text-xl font-bold text-soft-primary mb-3">$${formattedPrice}/мес</p>
-                ${ad.address ? `<p class="text-sm text-soft-gray mb-2 flex items-center">
-                    <i class="fas fa-map-marker-alt text-xs mr-1"></i>
-                    ${ad.address}
-                </p>` : ''}
-                ${ad.rooms ? `<p class="text-sm text-soft-gray mb-2"><i class="fas fa-door-open text-xs mr-1"></i>${ad.rooms} ${ad.rooms === 'studio' ? 'студия' : 'комнат'}</p>` : ''}
-                ${ad.area ? `<p class="text-sm text-soft-gray mb-2"><i class="fas fa-ruler-combined text-xs mr-1"></i>${ad.area} м²</p>` : ''}
-                ${ad.floor ? `<p class="text-sm text-soft-gray mb-2"><i class="fas fa-building text-xs mr-1"></i>${ad.floor}</p>` : ''}
-                <p class="text-sm text-soft-gray mb-4"><i class="fas fa-clock text-xs mr-1"></i>${timePosted}</p>
-                ${ad.link ? `
-                <a href="${ad.link}" target="_blank" class="soft-btn w-full bg-gradient-to-r from-soft-primary to-soft-secondary text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                    <i class="fas fa-eye mr-2"></i> Перейти на сайт
-                </a>
-                ` : ''}
+            let detailsHtml = `
+                ${ad.image ? `<img src="${ad.image}" alt="${title || 'Фото квартиры'}" class="w-full h-56 object-cover rounded-lg mb-4" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e0e0e0/ffffff?text=Нет+Фото';">` :
+                `<div class="w-full h-56 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg mb-4"><i class="fas fa-image text-soft-gray text-4xl"></i></div>`}
+
+                ${title ? `<h3 class="text-xl font-semibold text-soft-dark dark:text-soft-light mb-2">${title}</h3>` : ''}
+
+                <p class="text-2xl font-bold text-soft-primary mb-4">$${formattedPrice}</p>
+
+                <div class="prose prose-sm dark:prose-invert max-w-none mb-4">
+                    <p>${description.replace(/\n/g, '<br>')}</p> </div>
+
+                <div class="space-y-2 text-sm text-soft-dark dark:text-soft-light border-t border-gray-200 dark:border-gray-700 pt-4">
+                    ${ad.address ? `<p><i class="fas fa-map-marker-alt text-xs mr-2 w-4 text-center text-soft-gray"></i> ${ad.address}</p>` : ''}
+                    ${ad.rooms ? `<p><i class="fas fa-door-open text-xs mr-2 w-4 text-center text-soft-gray"></i> ${ad.rooms} ${ad.rooms === 'studio' ? 'студия' : 'комн.'}</p>` : ''}
+                    ${ad.area ? `<p><i class="fas fa-ruler-combined text-xs mr-2 w-4 text-center text-soft-gray"></i> ${ad.area} м²</p>` : ''}
+                    ${ad.floor ? `<p><i class="fas fa-building text-xs mr-2 w-4 text-center text-soft-gray"></i> ${ad.floor}</p>` : ''}
+                    <p><i class="fas fa-clock text-xs mr-2 w-4 text-center text-soft-gray"></i> ${timePosted}</p>
+                     ${ad.source && ad.source !== 'user' ? `<p><i class="fas fa-link text-xs mr-2 w-4 text-center text-soft-gray"></i> Источник: ${ad.source}</p>` : ''}
+                     ${ad.source === 'user' && ad.username ? `<p><i class="fas fa-user text-xs mr-2 w-4 text-center text-soft-gray"></i> Автор: @${ad.username}</p>` : ''}
+                </div>
             `;
+            content.innerHTML = detailsHtml;
 
-            modal.classList.add('active');
-
-            document.getElementById('listing-close').addEventListener('click', () => {
-                triggerHapticFeedback('light');
-                modal.classList.remove('active');
-            });
-        }
-
-        // Форматирование даты
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 0) return 'сегодня';
-            if (diffDays === 1) return 'вчера';
-            if (diffDays < 5) return `${diffDays} дня назад`;
-            return `${diffDays} дней назад`;
-        }
-
-        // Фоновая загрузка новых объявлений
-        function startBackgroundParsing() {
-            setInterval(() => {
-                loadNewListings();
-            }, 5 * 60 * 1000); // каждые 5 минут
-        }
-
-        // Добавление объявления
-        document.getElementById('listing-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            triggerHapticFeedback('light');
-
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Отправка...';
-            submitBtn.disabled = true;
-            
-            const formData = new FormData();
-            formData.append('telegram_id', userId);
-            formData.append('title', e.target.title.value);
-            formData.append('description', e.target.description.value);
-            formData.append('price', e.target.price.value);
-            formData.append('rooms', e.target.rooms.value);
-            formData.append('area', e.target.area.value);
-            formData.append('city', e.target.city.value);
-            formData.append('address', e.target.address.value);
-
-            const files = document.getElementById('file-input').files;
-            for (let i = 0; i < files.length; i++) {
-                formData.append('photos[]', files[i]);
-            }
-
-            fetch('/api/add_listing', {
-                method: 'POST',
-                body: formData
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') {
-                    showToast('Объявление отправлено на модерацию!', 'success');
-                    e.target.reset();
-                    document.getElementById('preview-container').innerHTML = '';
-                    document.getElementById('add-listing-form').classList.add('hidden');
-                    document.getElementById('user-listings').classList.remove('hidden');
-                    loadUserListings();
-                    loadNewListings(); // Обновляем вкладку "Новые"
+            // --- Configure "Go" Button ---
+            if (ad.link) {
+                goBtn.style.display = 'block';
+                // Remove previous listener before adding a new one
+                goBtn.onclick = null;
+                goBtn.onclick = () => {
                     triggerHapticFeedback('light');
-                } else {
-                    showToast(data.error || 'Ошибка при добавлении объявления', 'error');
-                }
-            }).catch(err => {
-                console.error('Ошибка добавления объявления:', err);
-                showToast('Произошла ошибка при добавлении объявления', 'error');
-            }).finally(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            });
-        });
-
-        // Показать тост
-        function showToast(message, type = 'info') {
-            let toast = document.getElementById('toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'toast';
-                toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-            if (type === 'success') {
-                toast.classList.add('bg-soft-success', 'text-white');
-            } else if (type === 'error') {
-                toast.classList.add('bg-soft-danger', 'text-white');
+                    tg.openLink(ad.link); // Use Telegram's method to open link
+                };
             } else {
-                toast.classList.add('bg-gray-800', 'text-white');
+                goBtn.style.display = 'none'; // Hide button if no link
             }
-            toast.classList.remove('opacity-0');
-            toast.classList.add('opacity-100');
-            setTimeout(() => {
+
+            // --- Show Modal ---
+            modal.classList.remove('hidden');
+            modal.classList.remove('opacity-0'); // Ensure visible if using opacity transition
+        }
+
+        function closeListingOverlay() {
+             const modal = document.getElementById('listing-overlay-modal');
+             if (modal) {
+                 triggerHapticFeedback('light');
+                 modal.classList.add('hidden');
+                 modal.classList.add('opacity-0'); // Add if using opacity transition
+             }
+        }
+
+        function populateEditForm(ad) {
+            const form = document.getElementById('listing-form');
+            const formTitle = document.getElementById('form-title');
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const previewContainer = document.getElementById('preview-container');
+            if (!form || !formTitle || !submitBtnText || !previewContainer) return;
+
+            form.reset();
+            previewContainer.innerHTML = ''; // Clear previews
+
+            form.title.value = ad.title || '';
+            form.description.value = ad.description || '';
+            form.price.value = ad.price || '';
+            form.rooms.value = ad.rooms || '1';
+            form.area.value = ad.area || '';
+            form.city.value = ad.city || 'minsk';
+            form.address.value = ad.address || '';
+            form.ad_id.value = ad.id || ''; // Set hidden ID field
+
+            form.setAttribute('data-edit-id', ad.id); // Set data attribute
+
+            formTitle.textContent = 'Редактирование объявления';
+            submitBtnText.textContent = 'Сохранить изменения';
+
+            // Show existing images (as info, not editable files)
+            if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
+                 let imageInfoHtml = '<p class="text-xs text-soft-gray w-full mb-2">Текущие фото (для замены загрузите новые):</p><div class="flex flex-wrap">';
+                 ad.images.forEach(imgUrl => {
+                     imageInfoHtml += `<div class="w-12 h-12 rounded mr-2 mb-2 border border-gray-300"><img src="${imgUrl}" class="w-full h-full object-cover rounded" loading="lazy"></div>`;
+                 });
+                 imageInfoHtml += '</div>';
+                 previewContainer.insertAdjacentHTML('beforeend', imageInfoHtml);
+            } else {
+                 previewContainer.insertAdjacentHTML('beforeend', '<p class="text-xs text-soft-gray w-full mb-2">Фото не были добавлены ранее.</p>');
+            }
+
+
+            // Show form, hide list
+            document.getElementById('add-listing-form').classList.remove('hidden');
+            document.getElementById('user-listings').classList.add('hidden');
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // --- Favorite Functions ---
+        function updateFavoriteStatusUI(adId, isFavorite) {
+            const heartButtons = document.querySelectorAll(`.favorite-btn[data-id="${adId}"]`);
+            heartButtons.forEach(button => {
+                 const icon = button.querySelector('i');
+                 if (icon) {
+                     icon.classList.toggle('fas', isFavorite); // Solid icon for favorited
+                     icon.classList.toggle('far', !isFavorite); // Regular icon for not favorited
+                     button.classList.toggle('favorited', isFavorite); // Add class for potential styling
+                 }
+            });
+        }
+
+        function updateProfileFavCount() {
+             const favCountEl = document.getElementById('profile-fav-count');
+             if (favCountEl) {
+                 favCountEl.textContent = userFavorites.length;
+             }
+        }
+
+        // --- Utility Functions ---
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Недавно';
+            try {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffTime = now - date;
+                const diffSeconds = Math.floor(diffTime / 1000);
+                const diffMinutes = Math.floor(diffSeconds / 60);
+                const diffHours = Math.floor(diffMinutes / 60);
+                const diffDays = Math.floor(diffHours / 24);
+
+                if (diffDays > 1) return `${diffDays} дн. назад`;
+                if (diffDays === 1) return 'вчера';
+                if (diffHours > 0) return `${diffHours} ч. назад`;
+                if (diffMinutes > 0) return `${diffMinutes} мин. назад`;
+                return 'только что';
+            } catch (e) {
+                 console.error("Error formatting date:", dateString, e);
+                 return 'Недавно';
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+
+            toast.textContent = message;
+            // Reset classes
+            toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-[200] transition-opacity duration-300';
+
+            let bgColor = 'bg-gray-800';
+            let textColor = 'text-white';
+
+            switch (type) {
+                case 'success':
+                    bgColor = 'bg-soft-success';
+                    break;
+                case 'error':
+                    bgColor = 'bg-soft-danger';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-soft-warning';
+                    textColor = 'text-gray-800'; // Warning often looks better with dark text
+                    break;
+                case 'info':
+                default:
+                    bgColor = 'bg-soft-info';
+                    break;
+            }
+            toast.classList.add(bgColor, textColor, 'opacity-100');
+
+            // Clear previous timeouts
+            clearTimeout(toast.hideTimeout);
+            toast.hideTimeout = setTimeout(() => {
                 toast.classList.remove('opacity-100');
                 toast.classList.add('opacity-0');
             }, 3000);
+
+             // Optional: Haptic feedback for toast
+             if (type === 'error' || type === 'warning') {
+                 triggerHapticFeedback('warning');
+             }
         }
+
+        function showCaptchaModal() {
+            const modal = document.getElementById('captcha-modal');
+            if (!modal) return;
+            // Generate or fetch a new captcha code here if needed
+            captchaCode = '3A7B9C'; // Keep example for now
+            const captchaDisplay = modal.querySelector('.font-mono');
+            if (captchaDisplay) captchaDisplay.textContent = captchaCode;
+            modal.classList.add('active');
+             // Disable search button while captcha is shown
+             const searchBtn = document.getElementById('search-btn');
+             if (searchBtn) searchBtn.disabled = true;
+        }
+
+        function createLoadingStateHTML(count = 1) {
+             let skeletonHTML = '';
+             for (let i = 0; i < count; i++) {
+                 skeletonHTML += `
+                     <div class="soft-card p-4 shadow-soft animate-pulse">
+                         <div class="flex space-x-4">
+                             <div class="skeleton w-20 h-20 rounded-lg"></div>
+                             <div class="flex-1 space-y-3 py-1">
+                                 <div class="skeleton h-4 w-3/4 rounded"></div>
+                                 <div class="skeleton h-3 w-1/2 rounded"></div>
+                                 <div class="skeleton h-3 w-2/3 rounded"></div>
+                             </div>
+                         </div>
+                     </div>
+                 `;
+             }
+             return skeletonHTML;
+        }
+
+        function createEmptyStateHTML(message, iconClass = 'fa-search') {
+             return `
+                 <div class="text-center py-10 px-4">
+                     <i class="fas ${iconClass} text-soft-gray text-3xl mb-3"></i>
+                     <p class="text-sm text-soft-gray">${message}</p>
+                 </div>
+             `;
+        }
+
+        function createErrorStateHTML(message) {
+             return `
+                 <div class="text-center py-10 px-4">
+                     <i class="fas fa-exclamation-triangle text-soft-danger text-3xl mb-3"></i>
+                     <p class="text-sm text-soft-gray">${message}</p>
+                 </div>
+             `;
+        }
+
+        // --- Background Parsing (Example) ---
+        function startBackgroundParsing() {
+            console.log("Starting background check interval");
+            setInterval(() => {
+                console.log("Checking for new listings...");
+                loadNewListings(); // Periodically check for new Kufar ads
+            }, 5 * 60 * 1000); // Check every 5 minutes
+        }
+
     </script>
 </body>
 </html>
