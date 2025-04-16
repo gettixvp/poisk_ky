@@ -32,7 +32,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Конфигурация
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://neondb_owner:npg_MJr6nebWzp3C@ep-fragrant-math-a2ladk0z-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "7846698102:AAFR2bhmjAkPiV-PjtnFIu_oRnzxYPP1xVo")
-RENDER_URL = os.getenv("RENDER_URL", "https://jake-3.onrender.com")
+RENDER_URL = os.getenv("RENDER_URL", "https://jake.up.railway.app")
 
 # Модели данных
 class SearchRequest(BaseModel):
