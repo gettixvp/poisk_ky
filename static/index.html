@@ -94,7 +94,7 @@
             width: calc(100% - 32px);
             max-width: 480px;
             height: 60px;
-            background-color: var(--tg-theme-secondary-bg-color, white);
+            background-color: #000000; /* Черный фон всегда */
             border-radius: 20px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             display: flex;
@@ -105,7 +105,7 @@
         }
 
         body.dark .bottom-nav {
-            background-color: var(--tg-theme-secondary-bg-color, #1f2937);
+            background-color: #000000; /* Черный фон для темной темы */
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
@@ -349,7 +349,7 @@
             background-color: #1e293b;
             color: white;
             text-align: center;
-            padding: 5px 10px;
+            padding: 5px 10px; 
             border-radius: 6px;
             font-size: 12px;
             white-space: nowrap;
@@ -377,7 +377,7 @@
             background-color: rgba(99, 102, 241, 0.1);
         }
         .tab-btn.active {
-            color: var(--tg-theme-button-color, #6366f1);
+            color: var(--tg-theme-button-color, #6366f1); /* Синий цвет для активной вкладки */
         }
         .tab-btn i {
             font-size: 20px;
@@ -385,6 +385,7 @@
         }
         .tab-btn.active i {
             transform: scale(1.1);
+            color: var(--tg-theme-button-color, #6366f1); /* Синий цвет для иконки активной вкладки */
         }
         .tab-btn span {
             font-size: 10px;
