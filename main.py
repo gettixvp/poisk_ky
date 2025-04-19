@@ -230,6 +230,7 @@ async def init_db():
         logger.info("Database connection pool created successfully.")
 
         async with db_pool.acquire() as conn:
+            # Create tables
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     telegram_id BIGINT PRIMARY KEY,
@@ -299,7 +300,23 @@ async def init_db():
                 CREATE INDEX IF NOT EXISTS idx_history_user ON history (user_telegram_id);
                 CREATE INDEX IF NOT EXISTS idx_comparisons_user ON comparisons (user_telegram_id);
             ''')
-        logger.info("Database schema initialized.")
+
+            # Add floor column if it doesn't exist
+            await conn.execute('''
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'listings' 
+                        AND column_name = 'floor'
+                    ) THEN
+                        ALTER TABLE listings ADD COLUMN floor TEXT;
+                    END IF;
+                END $$;
+            ''')
+
+        logger.info("Database schema initialized and migrations applied.")
     except Exception as e:
         logger.exception(f"Failed to initialize database: {str(e)}")
         raise
@@ -473,11 +490,16 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup={"inline_keyboard": keyboard}
         )
         logger.info(f"Sent /start response to user {user.id} ({user.username})")
-        asyncio.create_task(register_or_update_user(UserProfileRequest(
-            telegram_id=user.id,
-            username=user.username,
-            first_name=user.first_name
-        )))
+        # Manually acquire a database connection for registration
+        async with db_pool.acquire() as conn:
+            await register_or_update_user(
+                UserProfileRequest(
+                    telegram_id=user.id,
+                    username=user.username,
+                    first_name=user.first_name
+                ),
+                conn
+            )
     except Exception as e:
         logger.exception(f"Error in start_command for user {user.id}: {str(e)}")
         await update.message.reply_text("Произошла ошибка. Попробуйте позже.")
@@ -518,7 +540,7 @@ async def shutdown_event():
 # --- Helper Functions ---
 async def register_or_update_user(
     profile: UserProfileRequest,
-    conn: asyncpg.Connection = Depends(get_db_connection)
+    conn: asyncpg.Connection
 ):
     try:
         result = await conn.execute(
@@ -584,6 +606,7 @@ async def parse_and_store_kufar_listings():
         logger.info(f"Stored {len(listings)} Kufar listings.")
     except Exception as e:
         logger.error(f"Error parsing/storing Kufar listings: {str(e)}")
+        raise
 
 async def is_premium_user(telegram_id: int, conn: asyncpg.Connection) -> bool:
     return False  # Placeholder
@@ -945,7 +968,9 @@ async def manage_listing(
         city, address, uploaded_image_urls, datetime.utcnow(), "user")
 
     action = "updated" if is_update else "created"
-    await send_telegram_notification(telegram_id, f"Your listing '{title}' has been {action}!")
+    await send_telegram_notification(telegram_id, f"Your from typing import AsyncGenerator
+
+listing '{title}' has been {action}!")
     return StatusResponse(status="success", message=f"Listing {action}")
 
 @app.delete("/api/listings/{ad_id}", response_model=StatusResponse)
