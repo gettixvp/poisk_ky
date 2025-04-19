@@ -43,14 +43,12 @@ from urllib3.util.retry import Retry
 DATABASE_URL = "postgresql://neondb_owner:npg_MJr6nebWzp3C@ep-fragrant-math-a2ladk0z-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
 TELEGRAM_TOKEN = "7846698102:AAFR2bhmjAkPiV-PjtnFIu_oRnzxYPP1xVo"
 RENDER_URL = "https://jake-3.onrender.com"
-CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
-CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
-CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 UPLOAD_DIR = "Uploads"
 
-# Validate Cloudinary configuration
-if not all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET]):
-    logging.warning("Cloudinary environment variables not set. Image uploads will be skipped.")
+# Cloudinary configuration
+CLOUDINARY_CLOUD_NAME = "dhj2zl3ks"
+CLOUDINARY_API_KEY = "216733364197713"
+CLOUDINARY_API_SECRET = "r2FhpGSCbUttF5wrUfj7VFqN-_c"
 
 cloudinary.config(
     cloud_name=CLOUDINARY_CLOUD_NAME,
@@ -199,7 +197,6 @@ async def verify_telegram_user(init_data: str = Depends(telegram_auth)) -> int:
     if not init_data:
         raise HTTPException(status_code=401, detail="Telegram initData missing.")
     try:
-        # Parse initData (URL-encoded key-value pairs)
         parsed_data = urllib.parse.parse_qs(init_data)
         data_check_string = '\n'.join(f"{k}={v[0]}" for k, v in sorted(parsed_data.items()) if k != 'hash')
         secret_key = hmac.new(
@@ -380,6 +377,8 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
 
                 price_element = ad.select_one(".styles_price__usd__HpXMa")
                 price = int(re.sub(r"\D", "", price_element.text)) if price_element else None
+                if not price:
+                    logger.warning(f"Failed to parse price for listing: {listing_url}")
 
                 params_element = ad.select_one(".styles_parameters__7zKlL")
                 rooms_val, area, floor_info = None, None, None
@@ -415,11 +414,14 @@ def parse_kufar(city: str = "minsk", min_price: int = 100, max_price: int = 300,
                     'listing_url': listing_url,
                     'time_posted': time_posted
                 })
+                logger.debug(f"Parsed listing: price={price}, rooms={rooms_val}, area={area}, address={address}, time={time_posted}, url={listing_url}")
+
             except Exception as e:
                 logger.error(f"Error parsing listing: {str(e)}")
                 continue
 
         return parsed_data
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch {url}: {str(e)}")
         if 'response' in locals():
@@ -539,8 +541,6 @@ async def register_or_update_user(
         raise HTTPException(status_code=500, detail="Database error during user registration.")
 
 async def upload_image_to_cloudinary(file: UploadFile) -> str:
-    if not all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET]):
-        raise HTTPException(status_code=500, detail="Cloudinary not configured.")
     try:
         result = await cloudinary.uploader.upload(
             file.file,
@@ -919,13 +919,10 @@ async def manage_listing(
         raise HTTPException(status_code=400, detail=f"Maximum {max_images} images allowed.")
 
     uploaded_image_urls = existing_images
-    if photos and all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET]):
-        for photo in photos:
-            if photo.filename:
-                url = await upload_image_to_cloudinary(photo)
-                uploaded_image_urls.append(url)
-    elif photos:
-        logger.warning("Image uploads skipped: Cloudinary credentials not configured.")
+    for photo in photos:
+        if photo.filename:
+            url = await upload_image_to_cloudinary(photo)
+            uploaded_image_urls.append(url)
 
     await conn.execute('''
         INSERT INTO listings (
@@ -1199,7 +1196,7 @@ async def upload_image(
         return {"url": url}
     except Exception as e:
         logger.error(f"Error uploading image for {telegram_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Image uploads not supported without Cloudinary configuration.")
+        raise HTTPException(status_code=500, detail="Failed to upload image.")
 
 @app.get("/api/logs", response_model=LogsResponse)
 async def get_logs():
